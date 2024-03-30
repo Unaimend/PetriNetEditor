@@ -1,0 +1,17 @@
+{
+  "name": "canvas-desktop-app",
+  "version": "1.0.0",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "electron": "^29.1.6"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.3"
+  }
+}
