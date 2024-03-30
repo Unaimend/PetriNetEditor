@@ -5,7 +5,6 @@ let lastY = 0;
 const shapes = []; // Array to store drawn shapes
 let currentDraw = "circle"
 
-
 let shapeCreator = {
         circle: () => shapes.push(new Circle(lastX, lastY)),
         rectangle: () => shapes.push(new Rectangle(lastX, lastY))
@@ -38,13 +37,15 @@ class Rectangle extends Shape{
 
   draw(e) {
     ctx.beginPath();
-    ctx.rect(this.x, this.y, 150, 100);
     ctx.fillStyle = this.fillColor;
     if (this.isSelected) {
         ctx.fillStyle = "red";
     }
+    ctx.fillRect(this.x, this.y, 150, 100);
+    ctx.fillStyle = "black";
+    ctx.strokeRect(this.x, this.y, 150, 100);
     ctx.stroke();
-    ctx.fillStyle = "white"
+    ctx.fillStyle = "white";;
     [lastX, lastY] = [e.offsetX, e.offsetY];
   }
 }
@@ -92,11 +93,6 @@ function redraw(e) {
 
 
 
-canvas.addEventListener('mousedown', (e) => {
-    [lastX, lastY] = [e.offsetX, e.offsetY];
-});
-
-canvas.addEventListener('mouseup', (e) => add(e));
 
 function setCircle() {
         currentDraw = "circle"
@@ -106,16 +102,6 @@ function setRectangle() {
         currentDraw = "rectangle"
 }
 
-canvas.addEventListener('mousemove', function(event) {
-        const rect = canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        
-        // Check if mouse coordinates are inside the rectangle
-        if (x > 50 && x < 150 && y > 50 && y < 150) {
-            console.log('Mouse is over the rectangle');
-        }
-    });
 
 function isIntersectingShape(x, y) {
     var collision = false
@@ -123,21 +109,94 @@ function isIntersectingShape(x, y) {
         if (shape instanceof Rectangle) {
             if (x >= shape.x && x <= shape.x + 100 && y >= shape.y && y <= shape.y + 100) {
                 collision = true;
-                shape.isSelected = true
+            } else {
             }
+
         } else if (shape instanceof Circle) {
             const distance = Math.sqrt((x - shape.x) ** 2 + (y - shape.y) ** 2);
             if (distance <= 50) {
                 collision = true;
-                shape.isSelected = true
+            } else {
             }
-        } else {
-          shape.isSelected = false 
-        }
+        
+        } 
         
     }
     return collision
 }
+
+
+
+function selectElement(x, y) {
+    for (const shape of shapes) {
+        if (shape instanceof Rectangle) {
+            if (x >= shape.x && x <= shape.x + 100 && y >= shape.y && y <= shape.y + 100) {
+                console.log("DWdwd")
+                shape.isSelected = true
+            } else {
+                shape.isSelected = false
+            }
+
+        } else if (shape instanceof Circle) {
+            const distance = Math.sqrt((x - shape.x) ** 2 + (y - shape.y) ** 2);
+            if (distance <= 50) {
+                shape.isSelected = true
+            } else {
+                shape.isSelected = false
+            }
+        
+        } 
+    }
+}
+
+function deselectElement(x, y) {
+    for (const shape of shapes) {
+        if (shape instanceof Rectangle) {
+            if (x >= shape.x && x <= shape.x + 100 && y >= shape.y && y <= shape.y + 100) {
+                shape.isSelected = !shape.isSelected
+                console.log("DWdwddwww222")
+            } 
+
+        } else if (shape instanceof Circle) {
+            const distance = Math.sqrt((x - shape.x) ** 2 + (y - shape.y) ** 2);
+            if (distance <= 50) {
+                console.log("DWdwdd")
+                shape.isSelected = !shape.isSelected
+            } 
+        } 
+    }
+}
+
+
+canvas.addEventListener('mousemove', function(event) {
+    for (const shape of shapes) {
+        if (shape.isSelected) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+            shape.x = mouseX
+            shape.y = mouseY
+            console.log("X", shape.x)
+            console.log("Y", shape.y)
+        }
+        redraw(event)
+    }
+});
+
+
+canvas.addEventListener('mousedown', (e) => {
+    [lastX, lastY] = [e.offsetX, e.offsetY];
+});
+
+canvas.addEventListener('mousedown', (e) => {
+    selectElement(e.offsetX, e.offsetY)
+});
+
+canvas.addEventListener('mouseup', (e) => {
+    deselectElement(e.offsetX, e.offsetY)
+});
+
+canvas.addEventListener('mouseup', (e) => add(e));
 
 
 document.getElementById('rectangle-btn').addEventListener('click', setRectangle);
