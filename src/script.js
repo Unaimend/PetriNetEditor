@@ -6,6 +6,7 @@ const ctx = canvas.getContext('2d');
 let lastX = 0;
 let lastY = 0;
 let arcStart = null;
+let arcEnd = null;
 const shapes = []; // Array to store drawn shapes
 let currentDraw = "circle"
 var selectedElem = null
@@ -32,6 +33,8 @@ class Shape {
     this.fillColor = fillColor
     // Used in removal and moving of nodes
     this.isSelected = false
+    this.arcStart = false
+    this.arcEnd = false
   }
   getBoundingBox() {} 
   draw(e, x, y) {}     
@@ -88,6 +91,12 @@ export class Rectangle extends Shape{
     if (this.isSelected) {
         ctx.fillStyle = "red";
     }
+    if (this.arcStart) {
+        ctx.fillStyle = "green";
+    }
+    if (this.arcEnd) {
+        ctx.fillStyle = "yellow";
+    }
     ctx.fillRect(this.x, this.y, this.width, this.height);
     ctx.fillStyle = "black";
     ctx.strokeRect(this.x, this.y, this.width, this.height);
@@ -124,6 +133,12 @@ class Circle extends Shape{
     ctx.fillStyle = this.fillColor;
     if (this.isSelected) {
         ctx.fillStyle = "red";
+    }
+    if (this.arcStart) {
+        ctx.fillStyle = "green";
+    }
+    if (this.arcEnd) {
+        ctx.fillStyle = "yellow";
     }
     ctx.fill();
     ctx.stroke();
@@ -208,6 +223,55 @@ function isIntersectingShape(x, y) {
     return collision
 }
 
+function startArc(x, y) {
+    var shape
+    for (let i = shapes.length - 1; i >= 0; i--) {
+      shape = shapes[i]
+      if (shape instanceof Rectangle) {
+          if (x >= shape.x && x <= shape.x + shape.width && y >= shape.y && y <= shape.y + shape.height) {
+            shape.arcStart = true
+            return shape;
+          } else {
+              shape.arcStart = false
+          }
+      } else if (shape instanceof Circle) {
+          const distance = Math.sqrt((x - shape.x) ** 2 + (y - shape.y) ** 2);
+          if (distance <= shape.radius) {
+            shape.arcStart = true
+            return shape;
+          } else {
+              shape.arcStart = false
+          }
+      } 
+    }
+  return null
+}
+
+function endArc(x, y) {
+  var shape;
+    for (let i = shapes.length - 1; i >= 0; i--) {
+      shape = shapes[i]
+      if (shape instanceof Rectangle) {
+          if (x >= shape.x && x <= shape.x + shape.width && y >= shape.y && y <= shape.y + shape.height) {
+            shape.arcEnd = true
+            return shape;
+          } else {
+              shape.arcEnd = false
+          }
+      } else if (shape instanceof Circle) {
+          const distance = Math.sqrt((x - shape.x) ** 2 + (y - shape.y) ** 2);
+          if (distance <= shape.radius) {
+            shape.arcEnd = true
+            return shape;
+          } else {
+              shape.arcEnd = false
+          }
+      } 
+    }
+  return null
+}
+
+
 
 
 function selectElement(x, y) {
@@ -279,22 +343,13 @@ canvas.addEventListener('mousemove', function(event) {
 
 canvas.addEventListener('mousedown', (e) => {
     [lastX, lastY] = [e.offsetX, e.offsetY];
-    console.log("arc")
-    console.log(selectedElem)
-    console.log(arcStart)
-    if (arcMode && selectedElem != null && arcStart == null) {
-      console.log("Starting arc")
-      arcStart = elem
-    }
-
 });
 
 canvas.addEventListener('mouseup', (e) => {
     console.log("arc2")
-    if (arcMode && selectedElem != null && arcStart != null) {
-      console.log("Ending arc")
-      shapes.push(new Arc(arcStart, selectedElem))
-    }
+    //if (arcMode && selectedElem != null && arcStart != null) {
+    //  console.log("Ending arc")
+    //}
 });
 
 
@@ -305,11 +360,46 @@ canvas.addEventListener('click', (e) => {
     redraw(e)
     return
   }
+
+  if(arcMode == true && arcStart == null) {
+    var elem = startArc(e.offsetX,e.offsetY)
+    if (elem != null) {
+      console.log("Starting arc")
+      redraw(e)
+    }
+    arcStart = elem
+    return
+  }
+
+  if(arcMode == true && arcStart != null) {
+    var elem = endArc(e.offsetX,e.offsetY)
+    console.log("ArcEnd")
+    arcEnd = elem
+    console.log(elem)
+    if (elem != null) {
+      console.log("ending arc")
+      // DO stuff and reset arc start and arc end
+      shapes.push(new Arc(arcStart, arcEnd))
+    
+    }
+    for(var i = 0; i < shapes.length; ++i) {
+      var s = shapes[i]
+      s.arcStart = false;
+      s.arcEnd = false;
+    }
+    arcStart = null
+    arcEnd = null
+    redraw(e)
+
+    return
+  }
+
   if(selectedElem != null && arcMode == false) {
     selectedElem.isSelected = false
     selectedElem = null
+    redraw(e)
+    return
   }
-  redraw(e)
 });
 
 
