@@ -72,7 +72,38 @@ export class Canvas {
       }
       this.redrawShapes(e)
     });
+  
   }
+
+
+  deleteShape(e) {
+    console.log(this.selectedElem)
+    if(this.selectedElem != null) {
+      var index = this.shapes.findIndex(elem => this.selectedElem.id == elem.id)
+      console.log(index)
+      if(index != -1) {
+        var elemToDel = this.shapes[index]
+        // Remoev shape
+        this.shapes.splice(index, 1);
+        // Get new indices of arrows 
+        var arcIds = elemToDel.arcs.map( (e) => e.id)
+        var arcIndices = []
+        arcIds.forEach( id => {
+          arcIndices.push(this.shapes.findIndex((e) => e.id == id))
+        });
+        arcIndices.sort((a, b) => b - a);
+        console.log(arcIndices)
+        arcIndices.forEach(index => {
+            this.shapes.splice(index, 1);
+        });
+
+        
+      }
+    }
+    this.redrawShapes(event)
+  }
+
+
   addNewShape(e) {
     if (!this.isIntersectingShape(e.offsetX, e.offsetY)) {
       this.currentShape({x: e.offsetX, y: e.offsetY})
@@ -172,7 +203,9 @@ export class Canvas {
 
 
 export class Shape {
+  static idCounter = 0
   constructor(ctx, x, y, fillColor = "blue") {
+    this.id = Shape.idCounter++
     this.ctx = ctx
     this.x = x;
     this.y = y; 
@@ -205,6 +238,9 @@ export class Circle extends Shape{
     }
     this.ctx.fill();
     this.ctx.closePath();
+    this.ctx.font = '20px Arial';
+    this.ctx.fillStyle = 'black'; // Text c
+    this.ctx.fillText(this.id, this.x, this.y);
 
   }
 
