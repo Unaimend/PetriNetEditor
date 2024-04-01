@@ -13,15 +13,30 @@ export class Canvas {
     this.arc = null
 
     this.isDragging = false
+    this.isBoxSelecting = false
+    this.boxStartX = null
+    this.boxStartY = null
+    this.boxSelectMode = false
 
-
+    this.selectedElements = []
 
 
 
     this.canvas.addEventListener('mousedown', (e) => {
       this.isDragging = true;
+      if (this.boxSelectMode == true) {
+        this.isBoxSelecting = true;
+        this.boxStartX = e.offsetX
+        this.boxStartY = e.offsetY
+      }
       var elem = this.selectElement(e.offsetX, e.offsetY);
-      if(elem == null) {
+      this.redrawShapes()
+    });
+
+
+    this.canvas.addEventListener('click', (e) => {
+      this.isDragging = false
+      if(this.selectElem == null && this.boxSelectMode == false) {
         this.addNewShape(e)
       }
       this.redrawShapes()
@@ -34,8 +49,14 @@ export class Canvas {
           this.selectedElem.y = e.offsetY;
         }
       }
-      // This kills performace
+      console.log(this.isBoxSelecting)
+      // This REALLY kills performace
       this.redrawShapes(e)
+      if (this.isBoxSelecting) {
+        console.log(e.offsetX - this.boxStartX)
+        console.log(e.offsetY - this.boxStartY)
+        this.ctx.strokeRect(this.boxStartX, this.boxStartY, e.offsetX - this.boxStartX, e.offsetY - this.boxStartY);
+      }
     });
 
     this.canvas.addEventListener('mouseup', (e) => {
@@ -44,6 +65,9 @@ export class Canvas {
         this.selectedElem.fillColor = "blue";
         this.selectedElem = null
       }
+      
+
+      this.isBoxSelecting = false
       this.redrawShapes(e)
     });
 
@@ -76,29 +100,32 @@ export class Canvas {
   }
 
 
+
+  deleteShapeInternal(index) {
+    console.log(index)
+    if(index != -1) {
+      var elemToDel = this.shapes[index]
+      // Remoev shape
+      this.shapes.splice(index, 1);
+      // Get new indices of arrows 
+      var arcIds = elemToDel.arcs.map( (e) => e.id)
+      var arcIndices = []
+      arcIds.forEach( id => {
+        arcIndices.push(this.shapes.findIndex((e) => e.id == id))
+      });
+      arcIndices.sort((a, b) => b - a);
+      console.log(arcIndices)
+      arcIndices.forEach(index => {
+          this.shapes.splice(index, 1);
+      });
+    }
+  }
+
   deleteShape(e) {
     console.log(this.selectedElem)
     if(this.selectedElem != null) {
       var index = this.shapes.findIndex(elem => this.selectedElem.id == elem.id)
-      console.log(index)
-      if(index != -1) {
-        var elemToDel = this.shapes[index]
-        // Remoev shape
-        this.shapes.splice(index, 1);
-        // Get new indices of arrows 
-        var arcIds = elemToDel.arcs.map( (e) => e.id)
-        var arcIndices = []
-        arcIds.forEach( id => {
-          arcIndices.push(this.shapes.findIndex((e) => e.id == id))
-        });
-        arcIndices.sort((a, b) => b - a);
-        console.log(arcIndices)
-        arcIndices.forEach(index => {
-            this.shapes.splice(index, 1);
-        });
-
-        
-      }
+      this.deleteShapeInternal(index)
     }
     this.redrawShapes(event)
   }
@@ -176,6 +203,7 @@ export class Canvas {
         //}
       } 
     }
+    this.selectedElem = null
     return null
   }
 

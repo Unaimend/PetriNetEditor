@@ -15,10 +15,15 @@ document.getElementById('rectangle-btn').addEventListener('click',
   () => {c.currentShape = c.shapeCreator["rectangle"];} );
 document.getElementById('circle-btn').addEventListener('click', 
   () => {c.currentShape = c.shapeCreator["circle"]; });
-
+document.getElementById('boxselect-btn').addEventListener('click', 
+  () => {
+    c.boxSelectMode = !c.boxSelectMode
+    console.log(c.boxSelectMode)
+  });
 
 document.getElementById('debug-btn').addEventListener('click', 
-  () => {console.log(c.shapes)});
+  () => {
+  });
 
 
 document.addEventListener('keydown', (event) => {
