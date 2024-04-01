@@ -2,20 +2,15 @@ export class Canvas {
   constructor(canvas) {
     this.canvas = canvas
     this.ctx = this.canvas.getContext("2d")
-    this.lastSelectedElement = -1
-    this.lastX = 0;
-    this.lastY = 0;
     this.shapes = []
     this.shapeCreator = {
             circle: (pos) => { this.shapes.push(new Circle(this.ctx, pos.x, pos.y)) },
             rectangle: (pos) => this.shapes.push(new Rectangle(this.ctx, pos.x, pos.y))
     }
     this.currentShape = this.shapeCreator["circle"]
-    this.arcStart = null;
-    this.arcEnd = null;
     this.shapes = []; // Array to store drawn shapes
     this.selectedElem = null
-    this.arcMode = false
+    this.arc = null
 
     this.isDragging = false
 
@@ -33,13 +28,14 @@ export class Canvas {
     });
 
     this.canvas.addEventListener('mousemove', (e) => {
-        if (this.isDragging) {
-          if (this.selectedElem != null) {
-            this.selectedElem.x = e.offsetX;
-            this.selectedElem.y = e.offsetY;
-            this.redrawShapes(e)
-          }
+      if (this.isDragging) {
+        if (this.selectedElem != null) {
+          this.selectedElem.x = e.offsetX;
+          this.selectedElem.y = e.offsetY;
         }
+      }
+      // This kills performace
+      this.redrawShapes(e)
     });
 
     this.canvas.addEventListener('mouseup', (e) => {
@@ -47,17 +43,38 @@ export class Canvas {
       if (this.selectedElem != null) {
         this.selectedElem.fillColor = "blue";
         this.selectedElem = null
-        this.redrawShapes(e)
       }
-      
+      this.redrawShapes(e)
     });
 
-
-
+    this.canvas.addEventListener('dblclick', (e) => {
+      const x = e.offsetX;
+      const y = e.offsetY;
+      var elem = this.startArc(e.offsetX, e.offsetY);
+      console.log(elem)
+      if(elem != null) {
+        if(this.arc == null) {
+          // Start arc
+          this.arc = new Arc(this.ctx, elem, elem)
+        }
+        
+        if( this.arc != null)
+          if((this.arc.startShape instanceof Circle && elem instanceof Rectangle ) || 
+            (this.arc.startShape instanceof Rectangle && elem instanceof Circle )) {
+            // End arc
+            this.arc.endShape = elem
+            // So we can delete them if we delete the nodes
+            this.arc.startShape.arcs.push(this.arc)
+            this.arc.endShape.arcs.push(this.arc)
+            this.shapes.push(this.arc)
+            this.arc = null
+          } 
+      }
+      this.redrawShapes(e)
+    });
   }
-
   addNewShape(e) {
-    if (!this.isIntersectingShape(e.offsetX, e.offsetY) && this.arcMode == false) {
+    if (!this.isIntersectingShape(e.offsetX, e.offsetY)) {
       this.currentShape({x: e.offsetX, y: e.offsetY})
     }
     this.redrawShapes(e)
@@ -96,7 +113,6 @@ export class Canvas {
 
   selectElement(x, y) {
     var shape = null
-    console.log(this.selectedElem)
     for (let i = this.shapes.length - 1; i >= 0; i--) {
       shape = this.shapes[i]
       if (shape instanceof Rectangle) {
@@ -131,6 +147,25 @@ export class Canvas {
     }
     return null
   }
+
+  startArc(x, y) {
+    var shape = null
+    for (let i = this.shapes.length - 1; i >= 0; i--) {
+      shape = this.shapes[i]
+      if (shape instanceof Rectangle) {
+        if (x >= shape.x && x <= shape.x + shape.width && 
+          y >= shape.y && y <= shape.y + shape.height) {
+          return shape
+        }
+      } else if (shape instanceof Circle) {
+        const distance = Math.sqrt((x - shape.x) ** 2 + (y - shape.y) ** 2);
+        if (distance <= shape.radius) {
+          return shape
+        } 
+      } 
+    }
+    return null
+  }
 }
 
 
@@ -146,6 +181,7 @@ export class Shape {
     this.isSelected = false
     this.arcStart = false
     this.arcEnd = false
+    this.arcs = []
   }
   getBoundingBox() {} 
   draw(e, x, y) {}     
@@ -233,21 +269,17 @@ export class Arc extends Shape {
 
   draw(e) {
     var arrowSize = 10;
-    var startX = this.startShape.x;
-    var startY = this.startShape.y;
-    var endX = this.endShape.x;
-    var endY = this.endShape.y; 
     this.ctx.beginPath();
-    this.ctx.moveTo(startX, startY);
-    this.ctx.lineTo(endX, endY);
+    this.ctx.moveTo(this.startShape.x, this.startShape.y);
+    this.ctx.lineTo(this.endShape.x, this.endShape.y, );
     this.ctx.stroke();
 
     // Calculate angle of the line
-    const angle = Math.atan2(endY - startY, endX - startX);
+    const angle = Math.atan2(this.endShape.y- this.startShape.y, this.endShape.x- this.startShape.x);
 
     // Draw the arrowhead
     this.ctx.save();
-    this.ctx.translate(endX, endY);
+    this.ctx.translate(this.endShape.x, this.endShape.y);
     this.ctx.rotate(angle);
 
     this.ctx.beginPath();
