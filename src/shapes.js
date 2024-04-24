@@ -1,3 +1,4 @@
+import {addCircleProperties, addRectangleProperties}  from './propertyEditor.js';
 export class Canvas {
   constructor(canvas) {
     this.canvas = canvas
@@ -30,6 +31,7 @@ export class Canvas {
         this.boxStartY = e.offsetY
       }
       var elem = this.selectElement(e.offsetX, e.offsetY);
+      this.addPropertyField(elem)
       this.redrawShapes()
     });
 
@@ -47,9 +49,9 @@ export class Canvas {
         if (this.selectedElem != null) {
           this.selectedElem.x = e.offsetX;
           this.selectedElem.y = e.offsetY;
+          this.addPropertyField(this.selectedElem)
         }
       }
-      console.log(this.selectedElements)
       // This REALLY kills performace
       this.redrawShapes(e)
       if (this.isBoxSelecting) {
@@ -99,11 +101,36 @@ export class Canvas {
     });
   
   }
+  deleteAllChildren() {
+    const container = document.getElementById('property-editor');
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
+  }
 
+  getShapeWithID(id) {
+    var shape = this.shapes.filter(shape => shape.id == id);
+    return shape[0]
+  }
+
+
+  addPropertyField(elem) {
+    if(elem == null) {
+      return
+    }
+    this.deleteAllChildren()
+
+    if(elem instanceof Circle) {
+      addCircleProperties(this, elem)
+    }
+    
+    if(elem instanceof Rectangle) {
+      addRectangleProperties(this, elem)
+    }
+  }
 
 
   deleteShapeInternal(index) {
-    console.log(index)
     if(index != -1) {
       var elemToDel = this.shapes[index]
       // Remoev shape
