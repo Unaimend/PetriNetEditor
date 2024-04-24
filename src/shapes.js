@@ -52,8 +52,10 @@ export class Canvas {
           this.addPropertyField(this.selectedElem)
         }
       }
+
+      console.log(this.selectedElem)
       // This REALLY kills performace
-      this.redrawShapes(e)
+      this.redrawShapes()
       if (this.isBoxSelecting) {
         console.log(e.offsetX - this.boxStartX)
         console.log(e.offsetY - this.boxStartY)
@@ -72,7 +74,7 @@ export class Canvas {
       }
       
       this.isBoxSelecting = false
-      this.redrawShapes(e)
+      this.redrawShapes()
     });
 
     this.canvas.addEventListener('dblclick', (e) => {
@@ -97,7 +99,7 @@ export class Canvas {
             this.arc = null
           } 
       }
-      this.redrawShapes(e)
+      this.redrawShapes()
     });
   
   }
@@ -153,7 +155,7 @@ export class Canvas {
       var index = this.shapes.findIndex(elem => this.selectedElem.id == elem.id)
       this.deleteShapeInternal(index)
     }
-    this.redrawShapes(event)
+    this.redrawShapes()
   }
 
 
@@ -161,35 +163,44 @@ export class Canvas {
     if (!this.isIntersectingShape(e.offsetX, e.offsetY)) {
       this.currentShape({x: e.offsetX, y: e.offsetY})
     }
-    this.redrawShapes(e)
+    this.redrawShapes()
   }
 
-  redrawShapes(e) {
+  redrawShapes() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear canvas
     for (const shape of this.shapes) {
-      shape.draw(e)
+      shape.draw()
     }
   }
   
   isIntersectingShape(x, y) {
     var collision = false
     for (const shape of this.shapes) {
-        if (shape instanceof Rectangle) {
-            if (x >= shape.x && x <= shape.x + shape.width && 
-                y >= shape.y && y <= shape.y + shape.height) {
-                collision = true;
-            } else {
-            }
-  
-        } else if (shape instanceof Circle) {
-            const distance = Math.sqrt((x - shape.x) ** 2 + (y - shape.y) ** 2);
-            if (distance <= shape.radius) {
-                collision = true;
-            } else {
-            }
-        
+      if (shape instanceof Rectangle) {
+        if (x >= shape.x && x <= shape.x + shape.width && 
+          y >= shape.y && y <= shape.y + shape.height) {
+          collision = true;
         } 
+      } else if (shape instanceof Circle) {
+          const distance = Math.sqrt((x - shape.x) ** 2 + (y - shape.y) ** 2);
+          if (distance <= shape.radius) {
+              collision = true;
+          } 
+      } else if (shape instanceof Arc) {
+        var startXY = [shape.startShape.x, shape.startShape.y]
+        var endXY = [shape.endShape.x, shape.endShape.y]
         
+        var dir = [endXY[0] - startXY[0], endXY[1] - startXY[1]]
+
+        let t = ((x - startXY[0]) * dir[0] + (y - startXY[1]) * dir[1]) / (dir[0] * dir[0]+ dir[1] * dir[1]);
+        var check2 = [startXY[0] + dir[0]*t,  startXY[1] + dir[1]*t]
+    
+        let distance = Math.sqrt((x - check2[0]) ** 2 + (y - check2[1]) ** 2);
+        
+        if (distance < 10 && t < 1  && t > 0) {
+          collision = true;
+        }
+      }
     }
     return collision
   }
@@ -227,7 +238,32 @@ export class Canvas {
         } //else {
             //shape.isSelected = false
         //}
-      } 
+      } else if (shape instanceof Arc) {
+          if (this.selectedElem != null) {
+            this.selectedElem.fillColor = "pink";
+          }
+        var startXY = [shape.startShape.x, shape.startShape.y]
+        var endXY = [shape.endShape.x, shape.endShape.y]
+        
+        var dir = [endXY[0] - startXY[0], endXY[1] - startXY[1]]
+
+        let t = ((x - startXY[0]) * dir[0] + (y - startXY[1]) * dir[1]) / (dir[0] * dir[0]+ dir[1] * dir[1]);
+        console.log(t)
+        var check2 = [startXY[0] + dir[0]*t,  startXY[1] + dir[1]*t]
+        
+        // DEbug intersection point
+        //if(check2[0] > startXY[0] && check2[0] <= endXY[0]) {
+        //  //this.shapes.push(new Circle(this.ctx, check2[0], check2[1], "green"))
+        //}
+    
+        let distance = Math.sqrt((x - check2[0]) ** 2 + (y - check2[1]) ** 2);
+        
+        if (distance < 10 && t < 1  && t > 0) {
+          this.selectedElem = shape
+          this.selectedElem.fillColor = "red";
+          return this.selectedElem
+        }
+      }
     }
     this.selectedElem = null
     return null
@@ -295,7 +331,7 @@ export class Circle extends Shape{
     super(ctx, x, y, fillColor);
     this.radius = 10;
   }
-  draw(e, debug = false) {
+  draw(debug = false) {
     this.ctx.beginPath();
     this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     this.ctx.fillStyle = this.fillColor;
@@ -367,7 +403,7 @@ export class Rectangle extends Shape{
 
 
 export class Arc extends Shape {
-  constructor(ctx, start, end, fillColor) {
+  constructor(ctx, start, end, fillColor = "blue") {
     super(ctx, start.x, start.y, fillColor);
     this.startShape = start
     this.endShape = end 
@@ -375,6 +411,7 @@ export class Arc extends Shape {
 
   draw(e) {
     var arrowSize = 10;
+    this.ctx.strokeStyle = this.fillColor;
     this.ctx.beginPath();
     this.ctx.moveTo(this.startShape.x, this.startShape.y);
     this.ctx.lineTo(this.endShape.x, this.endShape.y, );
