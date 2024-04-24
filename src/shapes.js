@@ -49,7 +49,7 @@ export class Canvas {
           this.selectedElem.y = e.offsetY;
         }
       }
-      console.log(this.isBoxSelecting)
+      console.log(this.selectedElements)
       // This REALLY kills performace
       this.redrawShapes(e)
       if (this.isBoxSelecting) {
@@ -65,8 +65,10 @@ export class Canvas {
         this.selectedElem.fillColor = "blue";
         this.selectedElem = null
       }
+      if(this.isBoxSelecting) {
+        this.selectMultipleShapes(e)
+      }
       
-
       this.isBoxSelecting = false
       this.redrawShapes(e)
     });
@@ -75,7 +77,6 @@ export class Canvas {
       const x = e.offsetX;
       const y = e.offsetY;
       var elem = this.startArc(e.offsetX, e.offsetY);
-      console.log(elem)
       if(elem != null) {
         if(this.arc == null) {
           // Start arc
@@ -114,7 +115,6 @@ export class Canvas {
         arcIndices.push(this.shapes.findIndex((e) => e.id == id))
       });
       arcIndices.sort((a, b) => b - a);
-      console.log(arcIndices)
       arcIndices.forEach(index => {
           this.shapes.splice(index, 1);
       });
@@ -122,7 +122,6 @@ export class Canvas {
   }
 
   deleteShape(e) {
-    console.log(this.selectedElem)
     if(this.selectedElem != null) {
       var index = this.shapes.findIndex(elem => this.selectedElem.id == elem.id)
       this.deleteShapeInternal(index)
@@ -207,6 +206,22 @@ export class Canvas {
     return null
   }
 
+
+  selectMultipleShapes(e) {
+    var shape = null
+    this.selectedElements = []
+    for (let i = this.shapes.length - 1; i >= 0; i--) {
+      shape = this.shapes[i]
+      if (this.boxStartX <= shape.x && shape.x <= e.offsetX && 
+        this.boxStartY <= shape.y && shape.y < e.offsetY)  {
+        this.selectedElements.push(shape)
+        shape.fillColor = "red"
+      } else {
+        shape.fillColor = "blue"
+      }
+    }
+  }
+
   startArc(x, y) {
     var shape = null
     for (let i = this.shapes.length - 1; i >= 0; i--) {
@@ -267,7 +282,7 @@ export class Circle extends Shape{
     this.ctx.fill();
     this.ctx.closePath();
     this.ctx.font = '20px Arial';
-    this.ctx.fillStyle = 'black'; // Text c
+    this.ctx.fillStyle = 'red'; // Text c
     this.ctx.fillText(this.id, this.x, this.y);
 
   }
@@ -288,7 +303,7 @@ export class Circle extends Shape{
 }
 
 export class Rectangle extends Shape{
-  constructor(ctx, x, y, width = 20, height = 50,fillColor = "yellow") {
+  constructor(ctx, x, y, width = 20, height = 50,fillColor = "blue") {
     super(ctx, x, y, fillColor);
     this.width = width;
     this.height = height;
