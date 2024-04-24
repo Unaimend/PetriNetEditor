@@ -16,9 +16,26 @@
         canvas {
             border: 1px solid black;
         }
+
+      .property-label {
+            display: inline-block;
+        white-space: nowrap; 
+      }
+      .property-input {
+            display: inline-block;
+      }
+
+      .property-pair-container {
+        display: grid;
+        grid-template-columns: min-content auto;
+        grid-template-rows: 1fr; /* One row */
+        gap: 10px; /* Gap between grid items */
+      }
     </style>
 </head>
 <body>
+  <div id="property-editor">
+  </div>
     <div class="shape-selector">
         <button id="rectangle-btn">Rectangle</button>
         <button id="circle-btn">Circle</button>
