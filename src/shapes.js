@@ -54,6 +54,7 @@ export class Canvas {
 
 
     this.canvas.addEventListener('mousedown', (e) => {
+      e.preventDefault();
       this.isDragging = true;
       if (this.boxSelectMode == true) {
         this.isBoxSelecting = true;
@@ -93,6 +94,7 @@ export class Canvas {
     });
 
     this.canvas.addEventListener('mouseup', (e) => {
+      e.preventDefault();
       this.isDragging = false;
       if (this.selectedElem != null) {
         this.selectedElem.fillColor = "blue";
@@ -104,6 +106,8 @@ export class Canvas {
       
       this.isBoxSelecting = false
       this.redrawShapes()
+      return false
+
     });
 
     this.canvas.addEventListener('dblclick', (e) => {

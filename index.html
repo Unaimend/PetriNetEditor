@@ -7,10 +7,15 @@
     <style>
         body {
             margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            display: grid;
+            grid-template-columns: 288px 1fr; /* Sidebar and main content area */
+            grid-template-rows: 80px 1fr; /* Top bar and main content area */
+            grid-template-areas:
+                "header header"
+                "aside main";
+            height: 100vh; /* Make the grid take up the full height of the viewport */
         }
 
         canvas {
@@ -25,28 +30,68 @@
             display: inline-block;
       }
 
+      #property-editor {
+        min-width: 248px;
+      }
+
       .property-pair-container {
         display: grid;
         grid-template-columns: min-content auto;
         grid-template-rows: 1fr; /* One row */
         gap: 10px; /* Gap between grid items */
       }
+
+
+      header {
+          grid-area: header;
+          background-color: #333;
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+      }
+
+
+      aside {
+          grid-area: aside;
+          background-color: #f4f4f4;
+          /*padding: 20px;*/
+      }
+      
+      main {
+          grid-area: main;
+          padding: 20px;
+      }
+
+      
+      canvas {
+          position: relative; /* Position canvas relative to its container */
+          top: 0; /* Align canvas to the top of its container */
+          left: 0; /* Align canvas to the left of its container */
+      }
+
     </style>
+
+    <script src="node_modules/d3/dist/d3.js"></script>
+    <script src="src/shapes.js" type = "module"></script>
+    <script src="src/script.js" type = "module"></script>
 </head>
 <body>
-  <div id="property-editor">
-  </div>
+  <header>
     <div class="shape-selector">
         <button id="rectangle-btn">Rectangle</button>
         <button id="circle-btn">Circle</button>
         <button id="debug-btn">Debug</button>
         <button id="boxselect-btn">Boxselect</button>
     </div>
-    <canvas id="myCanvas" width="400" height="400"></canvas>
-    <script src="node_modules/d3/dist/d3.js"></script>
-    <script src="src/shapes.js" type = "module"></script>
-    <script src="src/script.js" type = "module"></script>
-
+  </header>
+  <aside>
+    <div id="property-editor">
+    </div>
+  </aside>
+  <main id ="main">
+      <canvas id="myCanvas"></canvas>
+  </main>
 </body>
 </html>
 
