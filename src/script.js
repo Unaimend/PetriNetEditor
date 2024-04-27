@@ -17,6 +17,7 @@ document.getElementById('boxselect-btn').addEventListener('click',
 
 document.getElementById('debug-btn').addEventListener('click', 
   () => {
+    console.log(c.shapes)
   });
 
 

@@ -12,6 +12,7 @@ export class Canvas {
     this.currentShape = this.shapeCreator["circle"]
     this.shapes = []; // Array to store drawn shapes
     this.selectedElem = null
+    this.lastSelectedElem = null
     this.arc = null
 
 
@@ -82,7 +83,6 @@ export class Canvas {
         }
       }
 
-      console.log(this.selectedElem)
       // This REALLY kills performace
       this.redrawShapes()
       if (this.isBoxSelecting) {
@@ -163,26 +163,45 @@ export class Canvas {
 
   deleteShapeInternal(index) {
     if(index != -1) {
+
       var elemToDel = this.shapes[index]
       // Remoev shape
       this.shapes.splice(index, 1);
-      // Get new indices of arrows 
-      var arcIds = elemToDel.arcs.map( (e) => e.id)
-      var arcIndices = []
-      arcIds.forEach( id => {
-        arcIndices.push(this.shapes.findIndex((e) => e.id == id))
-      });
-      arcIndices.sort((a, b) => b - a);
-      arcIndices.forEach(index => {
-          this.shapes.splice(index, 1);
-      });
+      if (elemToDel instanceof Circle || elemToDel instanceof Rectangle) {
+        // DELETE ARROW CODE
+        // Get new indices of arrows 
+        var arcIds = elemToDel.arcs.map( (e) => e.id)
+        var arcIndices = []
+        arcIds.forEach( id => {
+          arcIndices.push(this.shapes.findIndex((e) => e.id == id))
+        });
+        arcIndices.sort((a, b) => b - a);
+
+
+        arcIndices.forEach(index => {
+            this.shapes.splice(index, 1);
+        });
+        // END OF DELETE ARROW CODE
+      } else if (elemToDel instanceof Arc) {
+        // We need to remove the arc refs from the connected shapes
+        var start = elemToDel.startShape
+        var end = elemToDel.endShape
+        var idOfArc = elemToDel.id
+        var indexInStart = start.arcs.findIndex(elem => idOfArc == elem.id)
+        var indexInEnd = end.arcs.findIndex(elem => idOfArc == elem.id)
+
+        start.arcs.splice(indexInStart)
+        end.arcs.splice(indexInStart)
+      }
     }
   }
 
   deleteShape(e) {
-    if(this.selectedElem != null) {
-      var index = this.shapes.findIndex(elem => this.selectedElem.id == elem.id)
-      this.deleteShapeInternal(index)
+    if(this.lastSelectedElem != null) {
+      var index = this.shapes.findIndex(elem => this.lastSelectedElem.id == elem.id)
+      if(index != -1) {
+        this.deleteShapeInternal(index)
+      }
     }
     this.redrawShapes()
   }
@@ -248,6 +267,7 @@ export class Canvas {
             this.selectedElem.fillColor = "blue";
           }
           this.selectedElem = shape
+          this.lastSelectedElem = shape
           this.selectedElem.fillColor = "red";
           return this.selectedElem
         }// else {
@@ -262,6 +282,7 @@ export class Canvas {
             this.selectedElem.fillColor = "blue";
           }
           this.selectedElem = shape
+          this.lastSelectedElem = shape
           this.selectedElem.fillColor = "red";
           return this.selectedElem
         } //else {
@@ -289,6 +310,7 @@ export class Canvas {
         
         if (distance < 10 && t < 1  && t > 0) {
           this.selectedElem = shape
+          this.lastSelectedElem = shape
           this.selectedElem.fillColor = "red";
           return this.selectedElem
         }
