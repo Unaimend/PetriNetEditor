@@ -1,4 +1,5 @@
 import {addCircleProperties, addRectangleProperties}  from './propertyEditor.js';
+
 export class Canvas {
   constructor(canvas) {
     this.canvas = canvas
@@ -12,6 +13,34 @@ export class Canvas {
     this.shapes = []; // Array to store drawn shapes
     this.selectedElem = null
     this.arc = null
+
+
+    //https://observablehq.com/plot/getting-started
+    //Add d3 stuff to the canvas
+    //const context = this.ctx;
+
+    //const width = canvas.width;
+    //const height = canvas.height;
+
+    //const nodes = d3.range(100).map(() => ({ x: Math.random() * width, y: Math.random() * height }));
+
+    //const simulation = d3.forceSimulation(nodes)
+    //                     .force("charge", d3.forceManyBody().strength(-5))
+    //                     .force("center", d3.forceCenter(width / 2, height / 2))
+    //                     .on("tick", ticked);
+
+    //function ticked() {
+    //  context.clearRect(0, 0, width, height);
+
+    //  context.beginPath();
+    //  nodes.forEach(d => {
+    //    context.moveTo(d.x, d.y);
+    //    context.arc(d.x, d.y, 5, 0, 2 * Math.PI);
+    //  });
+    //  context.fillStyle = "#1f77b4";
+    //  context.fill();
+    //}
+
 
     this.isDragging = false
     this.isBoxSelecting = false
@@ -435,3 +464,7 @@ export class Arc extends Shape {
     this.ctx.restore();
   }
 }
+
+
+const response = await window.electron.ping()
+console.log(response)
