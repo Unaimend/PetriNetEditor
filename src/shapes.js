@@ -136,6 +136,15 @@ export class Canvas {
     });
   
   }
+
+  async save () {
+    try {
+      window.electron.save('save', this.shapes);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+  }
+
   deleteAllChildren() {
     const container = document.getElementById('property-editor');
     while (container.firstChild) {

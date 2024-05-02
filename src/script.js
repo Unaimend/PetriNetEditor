@@ -15,6 +15,12 @@ document.getElementById('boxselect-btn').addEventListener('click',
     console.log(c.boxSelectMode)
   });
 
+
+document.getElementById('save-btn').addEventListener('click', 
+  () => {
+    c.save()
+  });
+
 document.getElementById('debug-btn').addEventListener('click', 
   () => {
     console.log(c.shapes)
