@@ -21,6 +21,11 @@ document.getElementById('save-btn').addEventListener('click',
     c.save()
   });
 
+document.getElementById('load-btn').addEventListener('click', 
+  () => {
+    c.load()
+  });
+
 document.getElementById('debug-btn').addEventListener('click', 
   () => {
     console.log(c.shapes)

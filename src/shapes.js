@@ -2,12 +2,13 @@ import {addCircleProperties, addRectangleProperties}  from './propertyEditor.js'
 
 export class Canvas {
   constructor(canvas) {
+    this.idCounter = 0
     this.canvas = canvas
     this.ctx = this.canvas.getContext("2d")
     this.shapes = []
     this.shapeCreator = {
-            circle: (pos) => { this.shapes.push(new Circle(this.ctx, pos.x, pos.y)) },
-            rectangle: (pos) => this.shapes.push(new Rectangle(this.ctx, pos.x, pos.y))
+            circle: (pos) => { this.shapes.push(new Circle(this, pos.x, pos.y)) },
+            rectangle: (pos) => this.shapes.push(new Rectangle(this, pos.x, pos.y))
     }
     this.currentShape = this.shapeCreator["circle"]
     this.shapes = []; // Array to store drawn shapes
@@ -16,8 +17,7 @@ export class Canvas {
     this.arc = null
 
 
-    //https://observablehq.com/plot/getting-started
-    //Add d3 stuff to the canvas
+    //https://observablehq.com/plot/getting-started Add d3 stuff to the canvas
     //const context = this.ctx;
 
     //const width = canvas.width;
@@ -117,17 +117,23 @@ export class Canvas {
       if(elem != null) {
         if(this.arc == null) {
           // Start arc
-          this.arc = new Arc(this.ctx, elem, elem)
+          this.arc = new Arc(this, elem.id, elem.id)
         }
         
+        var startShape = this.lookUpByID(this.arc.startID)
+        var endShape = this.lookUpByID(this.arc.endID)
+        console.log(startShape)
+        console.log(endShape)
         if( this.arc != null)
-          if((this.arc.startShape instanceof Circle && elem instanceof Rectangle ) || 
-            (this.arc.startShape instanceof Rectangle && elem instanceof Circle )) {
+          if((startShape instanceof Circle && elem instanceof Rectangle ) || 
+            (startShape instanceof Rectangle && elem instanceof Circle )) {
             // End arc
-            this.arc.endShape = elem
+            this.arc.endID = elem.id
             // So we can delete them if we delete the nodes
-            this.arc.startShape.arcs.push(this.arc)
-            this.arc.endShape.arcs.push(this.arc)
+            startShape.arcStart = true
+            elem.arcEnd = true
+            startShape.arcIDS.push(this.arc.id)
+            elem.arcIDS.push(this.arc.id)
             this.shapes.push(this.arc)
             this.arc = null
           } 
@@ -137,9 +143,71 @@ export class Canvas {
   
   }
 
-  async save () {
+  lookUpByID(id) {
+    return this.shapes[this.shapes.findIndex((e) => e.id == id)]
+  }
+
+  serialize (x) {
+  return JSON.stringify(x, function(k, v) {
+    if (!k.startsWith("$"))
+      return v;
+    });
+  }
+
+  save () {
     try {
-      window.electron.save('save', this.shapes);
+      window.electron.save('save', this.serialize({"counter": this.idCounter, "shapes" : this.shapes}));
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }
+
+
+  
+  async load () {
+    try {
+      this.shapes  = []
+      var content = await window.electron.load()
+      var c = JSON.parse(content)
+      var s = c["shapes"]
+      for(var i in s) {
+        var shape = s[i]
+        switch(shape.type) {
+          case "Circle": {
+            var sh = new Circle(this, shape.x, shape.y, shape.fillColor)
+            sh.id = shape.id
+            sh.arcStart = shape.arcStart
+            sh.arcEnd  = shape.arcEnd
+            sh.arcIDS = shape.arcIDS
+            this.shapes.push(sh)
+            break
+          }
+          case "Rectangle": {
+            var sh = new Rectangle(this, shape.x, shape.y, shape.width, shape.height, shape.fillColor)
+            sh.id = shape.id
+            sh.arcStart = shape.arcStart
+            sh.arcEnd  = shape.arcEnd
+            sh.arcIDS = shape.arcIDS
+            this.shapes.push(sh)
+            break
+          }
+          case "Arc": {
+            // ARCS MUST APPEAR AFTER ALL OTHER SHAPES OTHERWEISE WE WONT FIND THEIR 
+            // SHAPE START AND AND SHAPE END IDS WHICH WE HAVE TO PASS IN THE CTOR
+
+            //TODO IDS of loadded onbjects
+            var sh = new Arc(this, shape.startID, shape.endID, shape.fillColor)
+            sh.id = shape.id
+            this.shapes.push(sh)
+            break
+          }
+          default: {
+            console.log("Should not happen")
+          }
+        }
+      }
+      this.idCounter = c["counter"]
+      this.redrawShapes()
     } catch (error) {
         console.error('Error:', error);
     }
@@ -174,6 +242,7 @@ export class Canvas {
   }
 
 
+
   deleteShapeInternal(index) {
     if(index != -1) {
 
@@ -197,14 +266,18 @@ export class Canvas {
         // END OF DELETE ARROW CODE
       } else if (elemToDel instanceof Arc) {
         // We need to remove the arc refs from the connected shapes
-        var start = elemToDel.startShape
-        var end = elemToDel.endShape
+        var start = this.lookUpByID(elemToDel.startID)
+        console.log(start)
+        start.arcStart = false
+        var end = this.lookUpByID(elemToDel.endID)
+        console.log(end)
+        end.arcStart = false
         var idOfArc = elemToDel.id
-        var indexInStart = start.arcs.findIndex(elem => idOfArc == elem.id)
-        var indexInEnd = end.arcs.findIndex(elem => idOfArc == elem.id)
+        var indexInStart = start.arcIDS.findIndex(elem => idOfArc == elem.id)
+        var indexInEnd = end.arcIDS.findIndex(elem => idOfArc == elem.id)
 
-        start.arcs.splice(indexInStart)
-        end.arcs.splice(indexInStart)
+        start.arcIDS.splice(indexInStart)
+        end.arcIDS.splice(indexInStart)
       }
     }
   }
@@ -248,8 +321,11 @@ export class Canvas {
               collision = true;
           } 
       } else if (shape instanceof Arc) {
-        var startXY = [shape.startShape.x, shape.startShape.y]
-        var endXY = [shape.endShape.x, shape.endShape.y]
+        
+        var startShape = this.lookUpByID(shape.startID)
+        var endShape = this.lookUpByID(shape.endID)
+        var startXY = [startShape.x, startShape.y]
+        var endXY = [endShape.x, endShape.y]
         
         var dir = [endXY[0] - startXY[0], endXY[1] - startXY[1]]
 
@@ -305,8 +381,10 @@ export class Canvas {
           if (this.selectedElem != null) {
             this.selectedElem.fillColor = "pink";
           }
-        var startXY = [shape.startShape.x, shape.startShape.y]
-        var endXY = [shape.endShape.x, shape.endShape.y]
+        var startShape = this.lookUpByID(shape.startID)
+        var endShape = this.lookUpByID(shape.endID)
+        var startXY = [startShape.x, startShape.y]
+        var endXY = [endShape.x, endShape.y]
         
         var dir = [endXY[0] - startXY[0], endXY[1] - startXY[1]]
 
@@ -373,10 +451,10 @@ export class Canvas {
 
 
 export class Shape {
-  static idCounter = 0
-  constructor(ctx, x, y, fillColor = "blue") {
-    this.id = Shape.idCounter++
-    this.ctx = ctx
+  constructor(canvas, x, y, fillColor = "blue") {
+    this.id = canvas.idCounter++
+    this.$canvas = canvas
+    this.$ctx = canvas.ctx 
     this.x = x;
     this.y = y; 
     this.fillColor = fillColor
@@ -384,33 +462,35 @@ export class Shape {
     this.isSelected = false
     this.arcStart = false
     this.arcEnd = false
-    this.arcs = []
+    this.arcIDS = []
   }
   getBoundingBox() {} 
   draw(e, x, y) {}     
+
 }
 
 export class Circle extends Shape{
   constructor(ctx, x, y, fillColor = "blue") {
     super(ctx, x, y, fillColor);
     this.radius = 10;
+    this.type = "Circle"
   }
   draw(debug = false) {
-    this.ctx.beginPath();
-    this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    this.ctx.fillStyle = this.fillColor;
+    this.$ctx.beginPath();
+    this.$ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    this.$ctx.fillStyle = this.fillColor;
 
     if(debug == true) {
         var bb = this.getBoundingBox()       
-        this.ctx.fillStyle = "pink";
-        this.ctx.strokeRect(...Object.values(bb));
-        this.ctx.stroke();
+        this.$ctx.fillStyle = "pink";
+        this.$ctx.strokeRect(...Object.values(bb));
+        this.$ctx.stroke();
     }
-    this.ctx.fill();
-    this.ctx.closePath();
-    this.ctx.font = '20px Arial';
-    this.ctx.fillStyle = 'red'; // Text c
-    this.ctx.fillText(this.id, this.x, this.y);
+    this.$ctx.fill();
+    this.$ctx.closePath();
+    this.$ctx.font = '20px Arial';
+    this.$ctx.fillStyle = 'red'; // Text c
+    this.$ctx.fillText(this.id, this.x, this.y);
 
   }
 
@@ -430,22 +510,22 @@ export class Circle extends Shape{
 }
 
 export class Rectangle extends Shape{
-  constructor(ctx, x, y, width = 20, height = 50,fillColor = "blue") {
-    super(ctx, x, y, fillColor);
+  constructor(canvas, x, y, width = 20, height = 50,fillColor = "blue") {
+    super(canvas, x, y, fillColor);
     this.width = width;
     this.height = height;
-        
+    this.type = "Rectangle"
   }
 
   draw(e) {
-    this.ctx.beginPath();
-    this.ctx.fillStyle = this.fillColor;
-    this.ctx.fillRect(this.x, this.y, this.width, this.height);
-    this.ctx.fillStyle = "black";
-    this.ctx.strokeRect(this.x, this.y, this.width, this.height);
-    this.ctx.stroke();
+    this.$ctx.beginPath();
+    this.$ctx.fillStyle = this.fillColor;
+    this.$ctx.fillRect(this.x, this.y, this.width, this.height);
+    this.$ctx.fillStyle = "black";
+    this.$ctx.strokeRect(this.x, this.y, this.width, this.height);
+    this.$ctx.stroke();
 
-    this.ctx.fillStyle = "green";
+    this.$ctx.fillStyle = "green";
   }
 
 
@@ -458,8 +538,6 @@ export class Rectangle extends Shape{
     return {
       x: topLeftX,
       y: topLeftY,
-      width: width,
-      height: height
     };
   }
 }
@@ -467,36 +545,39 @@ export class Rectangle extends Shape{
 
 
 export class Arc extends Shape {
-  constructor(ctx, start, end, fillColor = "blue") {
-    super(ctx, start.x, start.y, fillColor);
-    this.startShape = start
-    this.endShape = end 
+  constructor(canvas, start, end, fillColor = "blue") {
+    super(canvas, start.x, start.y, fillColor);
+    this.startID = start
+    this.endID = end 
+    this.type = "Arc"
   }
 
   draw(e) {
     var arrowSize = 10;
-    this.ctx.strokeStyle = this.fillColor;
-    this.ctx.beginPath();
-    this.ctx.moveTo(this.startShape.x, this.startShape.y);
-    this.ctx.lineTo(this.endShape.x, this.endShape.y, );
-    this.ctx.stroke();
+    this.$ctx.strokeStyle = this.fillColor;
+    let startShape = this.$canvas.lookUpByID(this.startID)
+    let endShape = this.$canvas.lookUpByID(this.endID)
+
+    this.$ctx.moveTo(startShape.x, startShape.y);
+    this.$ctx.lineTo(endShape.x, endShape.y, );
+    this.$ctx.stroke();
 
     // Calculate angle of the line
-    const angle = Math.atan2(this.endShape.y- this.startShape.y, this.endShape.x- this.startShape.x);
+    const angle = Math.atan2(endShape.y- startShape.y, endShape.x- startShape.x);
 
     // Draw the arrowhead
-    this.ctx.save();
-    this.ctx.translate(this.endShape.x, this.endShape.y);
-    this.ctx.rotate(angle);
+    this.$ctx.save();
+    this.$ctx.translate(endShape.x, endShape.y);
+    this.$ctx.rotate(angle);
 
-    this.ctx.beginPath();
-    this.ctx.moveTo(0, 0);
-    this.ctx.lineTo(-arrowSize, arrowSize / 2);
-    this.ctx.lineTo(-arrowSize, -arrowSize / 2);
-    this.ctx.closePath();
+    this.$ctx.beginPath();
+    this.$ctx.moveTo(0, 0);
+    this.$ctx.lineTo(-arrowSize, arrowSize / 2);
+    this.$ctx.lineTo(-arrowSize, -arrowSize / 2);
+    this.$ctx.closePath();
 
-    this.ctx.fill();
-    this.ctx.restore();
+    this.$ctx.fill();
+    this.$ctx.restore();
   }
 }
 
