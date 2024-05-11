@@ -35,7 +35,26 @@ function createWindow() {
       console.error(err);
     });
   };
-
+  
+  // Function to open the open dialog
+  const openFileDialog = async () => {
+    var path = await dialog.showOpenDialog(win, {
+      title: 'Open File', // Title of the dialog
+      defaultPath: app.getPath('documents'), // Default directory to open
+      buttonLabel: 'Open', // Label for the open button
+      filters: [
+        { name: 'Petri Nets', extensions: ['json'] }, // Limit file types to .txt
+        { name: 'All Files', extensions: ['*'] } // Allow all file types
+      ],
+      properties: ['openFile'] // Allow only file selection (not directories)
+    })
+    console.log(path)
+    if (!path.canceled && path.filePaths.length > 0) {
+      console.log('Selected file path:', path.filePaths[0]);
+      var c = fs.readFileSync(path.filePaths[0], { encoding: 'utf8', flag: 'r' });
+      return c  // Read the selected file
+    }
+  };
 
 
   ipcMain.handle('ping', () => 'pong')
@@ -43,6 +62,15 @@ function createWindow() {
     openSaveDialog(JSON.stringify(data))
     console.log(data)
   })
+
+  ipcMain.handle('load', async () => {
+  try {
+    var content = await openFileDialog()
+    return content
+  } catch (error) {
+    console.error("Promise rejected:", error);
+    // Handle errors if any
+  }})
 
 
   win.webContents.openDevTools();

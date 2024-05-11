@@ -137,9 +137,21 @@ export class Canvas {
   
   }
 
-  async save () {
+  save () {
     try {
       window.electron.save('save', this.shapes);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+  }
+
+  
+  async load () {
+    try {
+      var content = await window.electron.load()
+      console.log(content)
+      var c = JSON.parse(content)
+      console.log(c)
     } catch (error) {
         console.error('Error:', error);
     }
@@ -394,6 +406,7 @@ export class Circle extends Shape{
   constructor(ctx, x, y, fillColor = "blue") {
     super(ctx, x, y, fillColor);
     this.radius = 10;
+    this.type = "Circle"
   }
   draw(debug = false) {
     this.ctx.beginPath();
@@ -434,7 +447,7 @@ export class Rectangle extends Shape{
     super(ctx, x, y, fillColor);
     this.width = width;
     this.height = height;
-        
+    this.type = "Rectangle"
   }
 
   draw(e) {
@@ -471,6 +484,7 @@ export class Arc extends Shape {
     super(ctx, start.x, start.y, fillColor);
     this.startShape = start
     this.endShape = end 
+    this.type = "Arc"
   }
 
   draw(e) {
