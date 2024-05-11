@@ -2,6 +2,7 @@ import {addCircleProperties, addRectangleProperties}  from './propertyEditor.js'
 
 export class Canvas {
   constructor(canvas) {
+    this.idCounter = 0
     this.canvas = canvas
     this.ctx = this.canvas.getContext("2d")
     this.shapes = []
@@ -155,8 +156,7 @@ export class Canvas {
 
   save () {
     try {
-      console.log(this.serialize(this.shapes))
-      window.electron.save('save', this.serialize(this.shapes));
+      window.electron.save('save', this.serialize({"counter": this.idCounter, "shapes" : this.shapes}));
     } catch (error) {
       console.error('Error:', error);
     }
@@ -166,9 +166,48 @@ export class Canvas {
   
   async load () {
     try {
+      this.shapes  = []
       var content = await window.electron.load()
       var c = JSON.parse(content)
-      console.log(c)
+      var s = c["shapes"]
+      for(var i in s) {
+        var shape = s[i]
+        switch(shape.type) {
+          case "Circle": {
+            var sh = new Circle(this, shape.x, shape.y, shape.fillColor)
+            sh.id = shape.id
+            sh.arcStart = shape.arcStart
+            sh.arcEnd  = shape.arcEnd
+            sh.arcIDS = shape.arcIDS
+            this.shapes.push(sh)
+            break
+          }
+          case "Rectangle": {
+            var sh = new Rectangle(this, shape.x, shape.y, shape.width, shape.height, shape.fillColor)
+            sh.id = shape.id
+            sh.arcStart = shape.arcStart
+            sh.arcEnd  = shape.arcEnd
+            sh.arcIDS = shape.arcIDS
+            this.shapes.push(sh)
+            break
+          }
+          case "Arc": {
+            // ARCS MUST APPEAR AFTER ALL OTHER SHAPES OTHERWEISE WE WONT FIND THEIR 
+            // SHAPE START AND AND SHAPE END IDS WHICH WE HAVE TO PASS IN THE CTOR
+
+            //TODO IDS of loadded onbjects
+            var sh = new Arc(this, shape.startID, shape.endID, shape.fillColor)
+            sh.id = shape.id
+            this.shapes.push(sh)
+            break
+          }
+          default: {
+            console.log("Should not happen")
+          }
+        }
+      }
+      this.idCounter = c["counter"]
+      this.redrawShapes()
     } catch (error) {
         console.error('Error:', error);
     }
@@ -412,9 +451,8 @@ export class Canvas {
 
 
 export class Shape {
-  static idCounter = 0
   constructor(canvas, x, y, fillColor = "blue") {
-    this.id = Shape.idCounter++
+    this.id = canvas.idCounter++
     this.$canvas = canvas
     this.$ctx = canvas.ctx 
     this.x = x;
