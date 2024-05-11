@@ -59,7 +59,7 @@ function createWindow() {
 
   ipcMain.handle('ping', () => 'pong')
   ipcMain.handle('save', (event, data) => {
-    openSaveDialog(JSON.stringify(data))
+    openSaveDialog(data)
     console.log(data)
   })
 
