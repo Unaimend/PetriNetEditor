@@ -227,14 +227,18 @@ export class Canvas {
         // END OF DELETE ARROW CODE
       } else if (elemToDel instanceof Arc) {
         // We need to remove the arc refs from the connected shapes
-        var start = elemToDel.startShape
-        var end = elemToDel.endShape
+        var start = this.lookUpByID(elemToDel.startID)
+        console.log(start)
+        start.arcStart = false
+        var end = this.lookUpByID(elemToDel.endID)
+        console.log(end)
+        end.arcStart = false
         var idOfArc = elemToDel.id
-        var indexInStart = start.arcs.findIndex(elem => idOfArc == elem.id)
-        var indexInEnd = end.arcs.findIndex(elem => idOfArc == elem.id)
+        var indexInStart = start.arcIDS.findIndex(elem => idOfArc == elem.id)
+        var indexInEnd = end.arcIDS.findIndex(elem => idOfArc == elem.id)
 
-        start.arcs.splice(indexInStart)
-        end.arcs.splice(indexInStart)
+        start.arcIDS.splice(indexInStart)
+        end.arcIDS.splice(indexInStart)
       }
     }
   }
