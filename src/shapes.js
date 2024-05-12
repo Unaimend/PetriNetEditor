@@ -1,5 +1,5 @@
 import {addCircleProperties, addRectangleProperties}  from './propertyEditor.js';
-
+import { STATES, StateMachine} from './stateMachine.js';
 
 export class Canvas {
   constructor(canvas) {
@@ -16,6 +16,7 @@ export class Canvas {
     this.selectedElem = null
     this.lastSelectedElem = null
     this.arc = null
+    this.sm = new StateMachine()
 
 
     //https://observablehq.com/plot/getting-started Add d3 stuff to the canvas
@@ -70,7 +71,11 @@ export class Canvas {
 
     this.canvas.addEventListener('click', (e) => {
       this.isDragging = false
-      if(this.selectElem == null && this.boxSelectMode == false) {
+      //if(this.selectElem == null && this.boxSelectMode == false) {
+      //  this.addNewShape(e)
+      //}
+      //
+      if(this.sm.state == STATES.NOTHING_SELECTED && this.boxSelectMode == false) {
         this.addNewShape(e)
       }
       this.redrawShapes()
@@ -110,18 +115,21 @@ export class Canvas {
     });
 
     this.canvas.addEventListener('dblclick', (e) => {
-      const x = e.offsetX;
-      const y = e.offsetY;
+
       var elem = this.startArc(e.offsetX, e.offsetY);
+      console.log(elem)
+      if (elem == null) {
+        this.sm.state = STATES.NOTHING_SELECTED
+        console.log("Arc aborted")
+        return
+      }
       if(elem != null) {
-        if(this.arc == null) {
-          // Start arc
+        if(this.sm.state != STATES.ARC_STARTED) {
           this.arc = new Arc(this, elem.id, elem.id)
-        }
-        
-        var startShape = this.lookUpByID(this.arc.startID)
-        var endShape = this.lookUpByID(this.arc.endID)
-        if( this.arc != null)
+          console.log(`Started arc from element with id ${elem.id}`)
+          this.sm.state = STATES.ARC_STARTED
+        } else {
+          var startShape = this.lookUpByID(this.arc.startID)
           if((startShape instanceof Circle && elem instanceof Rectangle ) || 
             (startShape instanceof Rectangle && elem instanceof Circle )) {
             // End arc
@@ -133,9 +141,10 @@ export class Canvas {
             elem.arcIDS.push(this.arc.id)
             this.shapes.push(this.arc)
             this.arc = null
-          } 
+            } 
+        }
+        this.redrawShapes()
       }
-      this.redrawShapes()
     });
   
   }
@@ -487,7 +496,7 @@ export class Canvas {
         } 
       } 
     }
-    return nulla
+    return null
   }
 }
 
@@ -523,14 +532,14 @@ export class Circle extends Shape{
     this.radius = 10;
     this.type = "Circle"
   }
-  draw(debug = false) {
+  draw(debug = true) {
     this.$ctx.beginPath();
     this.$ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     this.$ctx.fillStyle = this.fillColor;
 
     if(debug == true) {
         var bb = this.getBoundingBox()       
-        this.$ctx.fillStyle = "pink";
+        //this.$ctx.fillStyle = "pink";
         this.$ctx.strokeRect(...Object.values(bb));
         this.$ctx.stroke();
     }
