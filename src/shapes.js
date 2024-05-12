@@ -1,5 +1,6 @@
 import {addCircleProperties, addRectangleProperties}  from './propertyEditor.js';
 
+
 export class Canvas {
   constructor(canvas) {
     this.idCounter = 0
@@ -139,6 +140,10 @@ export class Canvas {
   
   }
 
+  print(obj) {
+  return console.log(JSON.parse(this.serialize(obj)))
+  }
+
   simulate() {
     console.log("HEY")
     for(var s of this.shapes) {
@@ -149,25 +154,24 @@ export class Canvas {
         for(var connectedArcsID of s.arcIDS) {
           var connectedArc = this.lookUpByID(connectedArcsID)
           // Get the start object of the arc and check its token amount
-          var startObj = this.lookUpByID(connectedArc.id)
-          if(startObj.token == 0) {
-            s.canFire = 0
+          var startObj = this.lookUpByID(connectedArc.startID)
+          var endObj = this.lookUpByID(connectedArc.endID)
+          // I incoming arc (end id = myself.id has no token left)
+          //  TODO This conditions fails in simple_tokens2.json with an uneven amount of startToken
+          if(startObj.tokens == 0 /*&& endObj.id == s.id*/) {
+            s.canFire = false
             break
           }
-          s.canFire = 1
+          s.canFire = true
         }
       }
     }
+    console.log("---------------------")
     for(var i in this.shapes) {
       var s = this.shapes[i]
       // Do the actual fireing
       if(s instanceof Rectangle) {
-        console.log("SHAPE")
-        console.log(s)
-        console.log(s.canFire)
-        console.log(s)
-        if(s.canFire === 1) {
-          console.log("I FIRE")
+        if(s.canFire === true) {
           for(var connectedArcsID of s.arcIDS) {
             var connectedArc = this.lookUpByID(connectedArcsID)
             // Get the start object of the arc and check its token amount
@@ -176,12 +180,12 @@ export class Canvas {
               startObj.tokens -= 1
               // Todo One Input two output would create tokens out of nothing
               endObj.tokens += 1
-              s.canFire = 0
+              s.canFire = false
             }
           }
       }
     }
-
+    this.redrawShapes()
   }
 
   lookUpByID(id) {
@@ -235,10 +239,6 @@ export class Canvas {
             break
           }
           case "Arc": {
-            // ARCS MUST APPEAR AFTER ALL OTHER SHAPES OTHERWEISE WE WONT FIND THEIR 
-            // SHAPE START AND AND SHAPE END IDS WHICH WE HAVE TO PASS IN THE CTOR
-
-            //TODO IDS of loadded onbjects
             var sh = new Arc(this, shape.startID, shape.endID, shape.fillColor)
             sh.id = shape.id
             sh.tokens = shape.tokens
@@ -538,7 +538,7 @@ export class Circle extends Shape{
     this.$ctx.closePath();
     this.$ctx.font = '20px Arial';
     this.$ctx.fillStyle = 'red'; // Text c
-    this.$ctx.fillText(this.id, this.x, this.y);
+    this.$ctx.fillText(this.tokens, this.x, this.y);
 
   }
 
@@ -563,7 +563,7 @@ export class Rectangle extends Shape{
     this.width = width;
     this.height = height;
     this.type = "Rectangle"
-    this.canFire = 0 
+    this.canFire = false
   }
 
   draw(e) {
