@@ -1,4 +1,5 @@
 import {addCircleProperties, addRectangleProperties}  from './propertyEditor.js';
+import { STATES, StateMachine} from './stateMachine.js';
 
 export class Canvas {
   constructor(canvas) {
@@ -15,6 +16,7 @@ export class Canvas {
     this.selectedElem = null
     this.lastSelectedElem = null
     this.arc = null
+    this.sm = new StateMachine()
 
 
     //https://observablehq.com/plot/getting-started Add d3 stuff to the canvas
@@ -69,7 +71,8 @@ export class Canvas {
 
     this.canvas.addEventListener('click', (e) => {
       this.isDragging = false
-      if(this.selectElem == null && this.boxSelectMode == false) {
+      console.log(`Click called with state ${this.sm.state}`)
+      if(this.sm.state == STATES.NOTHING_SELECTED && this.boxSelectMode == false) {
         this.addNewShape(e)
       }
       this.redrawShapes()
@@ -87,8 +90,6 @@ export class Canvas {
       // This REALLY kills performace
       this.redrawShapes()
       if (this.isBoxSelecting) {
-        console.log(e.offsetX - this.boxStartX)
-        console.log(e.offsetY - this.boxStartY)
         this.ctx.strokeRect(this.boxStartX, this.boxStartY, e.offsetX - this.boxStartX, e.offsetY - this.boxStartY);
       }
     });
@@ -111,36 +112,99 @@ export class Canvas {
     });
 
     this.canvas.addEventListener('dblclick', (e) => {
-      const x = e.offsetX;
-      const y = e.offsetY;
+
       var elem = this.startArc(e.offsetX, e.offsetY);
-      if(elem != null) {
-        if(this.arc == null) {
-          // Start arc
-          this.arc = new Arc(this, elem.id, elem.id)
-        }
-        
+      console.log(`Element of arc start`)
+      console.log(elem)
+      if (elem == null) {
+        console.log(this.arc)
+        // Get tje start shape from the current arc and reset its color
         var startShape = this.lookUpByID(this.arc.startID)
-        var endShape = this.lookUpByID(this.arc.endID)
-        console.log(startShape)
-        console.log(endShape)
-        if( this.arc != null)
+        startShape.fillColor = "blue"
+        this.arc = null 
+        this.sm.state = STATES.NOTHING_SELECTED
+        console.log("Arc aborted")
+        this.redrawShapes()
+        return
+      }
+      if(elem != null) {
+        if(this.sm.state != STATES.ARC_STARTED) {
+          this.arc = new Arc(this, elem.id, elem.id)
+          elem.fillColor = "yellow"
+          console.log(`Started arc from element with id ${elem.id}`)
+          this.sm.state = STATES.ARC_STARTED
+        } else {
+          var startShape = this.lookUpByID(this.arc.startID)
+          // If start is a rectnagle we are only allowed to connect to a Rectangle 
+          // and the other way around
           if((startShape instanceof Circle && elem instanceof Rectangle ) || 
             (startShape instanceof Rectangle && elem instanceof Circle )) {
+            console.log(`Started arc from element with id ${startShape.id} to ${elem.id}`)
             // End arc
             this.arc.endID = elem.id
             // So we can delete them if we delete the nodes
             startShape.arcStart = true
+            startShape.fillColor = "blue"
             elem.arcEnd = true
             startShape.arcIDS.push(this.arc.id)
             elem.arcIDS.push(this.arc.id)
             this.shapes.push(this.arc)
             this.arc = null
+            this.sm.state = STATES.NOTHING_SELECTED
           } 
+        }
+        this.redrawShapes()
       }
-      this.redrawShapes()
     });
   
+  }
+
+  print(obj) {
+  return console.log(JSON.parse(this.serialize(obj)))
+  }
+
+  simulate() {
+    console.log("HEY")
+    for(var s of this.shapes) {
+      // Go through all Rechtangles and check if they are able to fire.
+      // We have to do this before doing the fireing because of we would change the
+      // tokens immediatly the result would depend on the order iteration
+      if(s instanceof Rectangle) {
+        for(var connectedArcsID of s.arcIDS) {
+          var connectedArc = this.lookUpByID(connectedArcsID)
+          // Get the start object of the arc and check its token amount
+          var startObj = this.lookUpByID(connectedArc.startID)
+          var endObj = this.lookUpByID(connectedArc.endID)
+          // I incoming arc (end id = myself.id has no token left)
+          //  TODO This conditions fails in simple_tokens2.json with an uneven amount of startToken
+          if(startObj.tokens == 0 /*&& endObj.id == s.id*/) {
+            s.canFire = false
+            break
+          }
+          s.canFire = true
+        }
+      }
+    }
+    console.log("---------------------")
+    for(var i in this.shapes) {
+      var s = this.shapes[i]
+      // Do the actual fireing
+      if(s instanceof Rectangle) {
+        if(s.canFire === true) {
+          for(var connectedArcsID of s.arcIDS) {
+            var connectedArc = this.lookUpByID(connectedArcsID)
+            // Get the start object of the arc and check its token amount
+            var startObj = this.lookUpByID(connectedArc.startID)
+            var endObj = this.lookUpByID(connectedArc.endID)
+              startObj.tokens -= 1
+              // Todo One Input two output would create tokens out of nothing
+              endObj.tokens += 1
+              s.canFire = false
+            }
+          }
+      }
+    }
+    this.redrawShapes()
   }
 
   lookUpByID(id) {
@@ -179,6 +243,7 @@ export class Canvas {
             sh.arcStart = shape.arcStart
             sh.arcEnd  = shape.arcEnd
             sh.arcIDS = shape.arcIDS
+            sh.tokens = shape.tokens
             this.shapes.push(sh)
             break
           }
@@ -188,16 +253,14 @@ export class Canvas {
             sh.arcStart = shape.arcStart
             sh.arcEnd  = shape.arcEnd
             sh.arcIDS = shape.arcIDS
+            sh.tokens = shape.tokens
             this.shapes.push(sh)
             break
           }
           case "Arc": {
-            // ARCS MUST APPEAR AFTER ALL OTHER SHAPES OTHERWEISE WE WONT FIND THEIR 
-            // SHAPE START AND AND SHAPE END IDS WHICH WE HAVE TO PASS IN THE CTOR
-
-            //TODO IDS of loadded onbjects
             var sh = new Arc(this, shape.startID, shape.endID, shape.fillColor)
             sh.id = shape.id
+            sh.tokens = shape.tokens
             this.shapes.push(sh)
             break
           }
@@ -244,27 +307,36 @@ export class Canvas {
 
 
   deleteShapeInternal(index) {
+    console.log("Deletion called")
     if(index != -1) {
-
+      console.log("Deletion index valid")
       var elemToDel = this.shapes[index]
-      console.log(elemToDel)
       // Remoev shape
       this.shapes.splice(index, 1);
       if (elemToDel instanceof Circle || elemToDel instanceof Rectangle) {
+        console.log("Deleting Circle or Rectangle")
         // DELETE ARROW CODE
         // Get new indices of arrows 
         var arcIds = elemToDel.arcIDS
         var arcIndices = []
         // TODO Add Circle then Rect then Arc, delete Rect -> Arc still in Circle
+        // TODO Add circle and two rects then add arc sth like that 
         arcIds.forEach( id => {
           arcIndices.push(this.shapes.findIndex((e) => e.id == id))
         });
         arcIndices.sort((a, b) => b - a);
 
-
         arcIndices.forEach(index => {
             this.shapes.splice(index, 1);
         });
+
+        // If we are still in this state and we end up deleting we
+        // deleted the start shape of the arc
+        if(this.sm.state == STATES.ARC_STARTED) {
+          this.arc = null
+          this.sm.state = STATES.NOTHING_SELECTED
+          console.log("Deleted Arc start")
+        }
         // END OF DELETE ARROW CODE
       } else if (elemToDel instanceof Arc) {
         // We need to remove the arc refs from the connected shapes
@@ -285,7 +357,6 @@ export class Canvas {
   deleteShape(e) {
     if(this.lastSelectedElem != null) {
       var index = this.shapes.findIndex(elem => this.lastSelectedElem.id == elem.id)
-      console.log(index)
       if(index != -1) {
         this.deleteShapeInternal(index)
       }
@@ -390,7 +461,6 @@ export class Canvas {
         var dir = [endXY[0] - startXY[0], endXY[1] - startXY[1]]
 
         let t = ((x - startXY[0]) * dir[0] + (y - startXY[1]) * dir[1]) / (dir[0] * dir[0]+ dir[1] * dir[1]);
-        console.log(t)
         var check2 = [startXY[0] + dir[0]*t,  startXY[1] + dir[1]*t]
         
         // DEbug intersection point
@@ -464,6 +534,10 @@ export class Shape {
     this.arcStart = false
     this.arcEnd = false
     this.arcIDS = []
+    
+    // For rects and circles this is the current amount
+    // For arc in is the throughput
+    this.tokens = 1
   }
   getBoundingBox() {} 
   draw(e, x, y) {}     
@@ -476,14 +550,14 @@ export class Circle extends Shape{
     this.radius = 10;
     this.type = "Circle"
   }
-  draw(debug = false) {
+  draw(debug = true) {
     this.$ctx.beginPath();
     this.$ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     this.$ctx.fillStyle = this.fillColor;
 
     if(debug == true) {
         var bb = this.getBoundingBox()       
-        this.$ctx.fillStyle = "pink";
+        //this.$ctx.fillStyle = "pink";
         this.$ctx.strokeRect(...Object.values(bb));
         this.$ctx.stroke();
     }
@@ -491,7 +565,7 @@ export class Circle extends Shape{
     this.$ctx.closePath();
     this.$ctx.font = '20px Arial';
     this.$ctx.fillStyle = 'red'; // Text c
-    this.$ctx.fillText(this.id, this.x, this.y);
+    this.$ctx.fillText(this.tokens, this.x, this.y);
 
   }
 
@@ -516,6 +590,7 @@ export class Rectangle extends Shape{
     this.width = width;
     this.height = height;
     this.type = "Rectangle"
+    this.canFire = false
   }
 
   draw(e) {
@@ -584,4 +659,3 @@ export class Arc extends Shape {
 
 
 const response = await window.electron.ping()
-console.log(response)

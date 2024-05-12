@@ -26,6 +26,13 @@ document.getElementById('load-btn').addEventListener('click',
     c.load()
   });
 
+
+document.getElementById('simulate-btn').addEventListener('click', 
+  () => {
+    c.simulate()
+  });
+
+
 document.getElementById('debug-btn').addEventListener('click', 
   () => {
     console.log(c.shapes)
