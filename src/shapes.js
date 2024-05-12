@@ -71,10 +71,7 @@ export class Canvas {
 
     this.canvas.addEventListener('click', (e) => {
       this.isDragging = false
-      //if(this.selectElem == null && this.boxSelectMode == false) {
-      //  this.addNewShape(e)
-      //}
-      //
+      console.log(`Click called with state ${this.sm.state}`)
       if(this.sm.state == STATES.NOTHING_SELECTED && this.boxSelectMode == false) {
         this.addNewShape(e)
       }
@@ -117,31 +114,44 @@ export class Canvas {
     this.canvas.addEventListener('dblclick', (e) => {
 
       var elem = this.startArc(e.offsetX, e.offsetY);
+      console.log(`Element of arc start`)
       console.log(elem)
       if (elem == null) {
+        console.log(this.arc)
+        // Get tje start shape from the current arc and reset its color
+        var startShape = this.lookUpByID(this.arc.startID)
+        startShape.fillColor = "blue"
+        this.arc = null 
         this.sm.state = STATES.NOTHING_SELECTED
         console.log("Arc aborted")
+        this.redrawShapes()
         return
       }
       if(elem != null) {
         if(this.sm.state != STATES.ARC_STARTED) {
           this.arc = new Arc(this, elem.id, elem.id)
+          elem.fillColor = "yellow"
           console.log(`Started arc from element with id ${elem.id}`)
           this.sm.state = STATES.ARC_STARTED
         } else {
           var startShape = this.lookUpByID(this.arc.startID)
+          // If start is a rectnagle we are only allowed to connect to a Rectangle 
+          // and the other way around
           if((startShape instanceof Circle && elem instanceof Rectangle ) || 
             (startShape instanceof Rectangle && elem instanceof Circle )) {
+            console.log(`Started arc from element with id ${startShape.id} to ${elem.id}`)
             // End arc
             this.arc.endID = elem.id
             // So we can delete them if we delete the nodes
             startShape.arcStart = true
+            startShape.fillColor = "blue"
             elem.arcEnd = true
             startShape.arcIDS.push(this.arc.id)
             elem.arcIDS.push(this.arc.id)
             this.shapes.push(this.arc)
             this.arc = null
-            } 
+            this.sm.state = STATES.NOTHING_SELECTED
+          } 
         }
         this.redrawShapes()
       }
@@ -297,28 +307,36 @@ export class Canvas {
 
 
   deleteShapeInternal(index) {
+    console.log("Deletion called")
     if(index != -1) {
-
+      console.log("Deletion index valid")
       var elemToDel = this.shapes[index]
       // Remoev shape
       this.shapes.splice(index, 1);
       if (elemToDel instanceof Circle || elemToDel instanceof Rectangle) {
+        console.log("Deleting Circle or Rectangle")
         // DELETE ARROW CODE
         // Get new indices of arrows 
         var arcIds = elemToDel.arcIDS
         var arcIndices = []
         // TODO Add Circle then Rect then Arc, delete Rect -> Arc still in Circle
-        //
         // TODO Add circle and two rects then add arc sth like that 
         arcIds.forEach( id => {
           arcIndices.push(this.shapes.findIndex((e) => e.id == id))
         });
         arcIndices.sort((a, b) => b - a);
 
-
         arcIndices.forEach(index => {
             this.shapes.splice(index, 1);
         });
+
+        // If we are still in this state and we end up deleting we
+        // deleted the start shape of the arc
+        if(this.sm.state == STATES.ARC_STARTED) {
+          this.arc = null
+          this.sm.state = STATES.NOTHING_SELECTED
+          console.log("Deleted Arc start")
+        }
         // END OF DELETE ARROW CODE
       } else if (elemToDel instanceof Arc) {
         // We need to remove the arc refs from the connected shapes
