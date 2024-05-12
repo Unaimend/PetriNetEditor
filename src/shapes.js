@@ -247,13 +247,15 @@ export class Canvas {
     if(index != -1) {
 
       var elemToDel = this.shapes[index]
+      console.log(elemToDel)
       // Remoev shape
       this.shapes.splice(index, 1);
       if (elemToDel instanceof Circle || elemToDel instanceof Rectangle) {
         // DELETE ARROW CODE
         // Get new indices of arrows 
-        var arcIds = elemToDel.arcs.map( (e) => e.id)
+        var arcIds = elemToDel.arcIDS
         var arcIndices = []
+        // TODO Add Circle then Rect then Arc, delete Rect -> Arc still in Circle
         arcIds.forEach( id => {
           arcIndices.push(this.shapes.findIndex((e) => e.id == id))
         });
@@ -267,17 +269,15 @@ export class Canvas {
       } else if (elemToDel instanceof Arc) {
         // We need to remove the arc refs from the connected shapes
         var start = this.lookUpByID(elemToDel.startID)
-        console.log(start)
         start.arcStart = false
         var end = this.lookUpByID(elemToDel.endID)
-        console.log(end)
         end.arcStart = false
         var idOfArc = elemToDel.id
         var indexInStart = start.arcIDS.findIndex(elem => idOfArc == elem.id)
         var indexInEnd = end.arcIDS.findIndex(elem => idOfArc == elem.id)
 
         start.arcIDS.splice(indexInStart)
-        end.arcIDS.splice(indexInStart)
+        end.arcIDS.splice(indexInEnd)
       }
     }
   }
@@ -285,6 +285,7 @@ export class Canvas {
   deleteShape(e) {
     if(this.lastSelectedElem != null) {
       var index = this.shapes.findIndex(elem => this.lastSelectedElem.id == elem.id)
+      console.log(index)
       if(index != -1) {
         this.deleteShapeInternal(index)
       }
