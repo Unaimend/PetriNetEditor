@@ -68,6 +68,29 @@ export function addCircleProperties(canvas, elem) {
     self.redrawShapes(event)
   });
 
+
+  pair = document.createElement('div');
+  pair.classList.add('property-pair-container')
+  label = document.createElement('label');
+  label.textContent = 'Tokens';
+  label.setAttribute('for', 'TokenPropertyInputl');
+  label.classList.add('property-label');
+  
+  input = document.createElement('input');
+  input.setAttribute('type', 'text');
+  input.setAttribute('id', 'TokenPropertyInput');
+  input.setAttribute('value', elem.tokens);
+  pair.appendChild(label);
+  pair.appendChild(input);
+  newDiv.appendChild(pair)
+  input.addEventListener('input', function(event) {
+    const currentValue = event.target.value;
+    const currentID = idInput.value
+    const currentShape = self.getShapeWithID(currentID)
+    currentShape.tokens = currentValue
+    self.redrawShapes(event)
+  });
+
   // Append the new div to the container
   container.appendChild(newDiv);
 } 
@@ -139,6 +162,29 @@ export function addRectangleProperties(canvas, elem) {
     const currentID = idInput.value
     const currentShape = self.getShapeWithID(currentID)
     currentShape.y = currentValue
+    self.redrawShapes(event)
+  });
+
+
+  pair = document.createElement('div');
+  pair.classList.add('property-pair-container')
+  label = document.createElement('label');
+  label.textContent = 'Tokens';
+  label.setAttribute('for', 'TokenPropertyInputl');
+  label.classList.add('property-label');
+  
+  input = document.createElement('input');
+  input.setAttribute('type', 'text');
+  input.setAttribute('id', 'TokenPropertyInput');
+  input.setAttribute('value', elem.tokens);
+  pair.appendChild(label);
+  pair.appendChild(input);
+  newDiv.appendChild(pair)
+  input.addEventListener('input', function(event) {
+    const currentValue = event.target.value;
+    const currentID = idInput.value
+    const currentShape = self.getShapeWithID(currentID)
+    currentShape.tokens = currentValue
     self.redrawShapes(event)
   });
 
