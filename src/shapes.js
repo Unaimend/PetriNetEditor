@@ -658,7 +658,7 @@ export class Shape {
 
     this.$ctx.font = '20px Arial';
     this.$ctx.fillStyle = 'blue';
-    this.$ctx.fillText(this.label, this.x-textWidth/2, this.y + 5);
+    this.$ctx.fillText(this.label, this.x-textWidth/2, this.y - 15);
   }     
 
 }
