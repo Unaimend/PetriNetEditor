@@ -1,193 +1,62 @@
 
-export function addCircleProperties(canvas, elem) {
-  const container = document.getElementById('property-editor');
-
-  const self = canvas;
-  // Create a new div element for the property
-  const newDiv = document.createElement('div');
-
+function createLabelInputPair_(canvas, propertyWindow, elem, labelText, extractor, setter) {
   // Create label and input elements
   var pair = document.createElement('div');
   pair.classList.add('property-pair-container')
   var label = document.createElement('label');
-  label.textContent = 'Id';
-  label.setAttribute('for', 'IdPropertyInputl');
+  label.textContent = labelText;
   label.classList.add('property-label');
 
-  var idInput = document.createElement('input');
-  idInput.setAttribute('type', 'text');
-  idInput.setAttribute('id', 'IdPropertyInput');
-  idInput.setAttribute('value', elem.id);
-  idInput.classList.add('property-input');
-  pair.appendChild(label);
-  pair.appendChild(idInput);
-  newDiv.appendChild(pair)
-
-  pair = document.createElement('div');
-  pair.classList.add('property-pair-container')
-  label = document.createElement('label');
-  label.textContent = 'X Pos';
-  label.setAttribute('for', 'XPosPropertyInputl');
-  label.classList.add('property-label');
-  
   var input = document.createElement('input');
-  input = document.createElement('input');
   input.setAttribute('type', 'text');
-  input.setAttribute('id', 'XPosPropertyInput');
-  input.setAttribute('value', elem.x);
+  input.setAttribute('id', labelText)
+  input.setAttribute('value', extractor(elem));
+  input.classList.add('property-input');
   pair.appendChild(label);
   pair.appendChild(input);
-  newDiv.appendChild(pair)
-  input.addEventListener('input', function(event) {
-    const currentValue = event.target.value;
-    const currentID = idInput.value
-    const currentShape = self.getShapeWithID(currentID)
-    currentShape.x = currentValue
-    self.redrawShapes(event)
-  });
-  
-  pair = document.createElement('div');
-  pair.classList.add('property-pair-container')
-  label = document.createElement('label');
-  label.textContent = 'Y Pos';
-  label.setAttribute('for', 'YPosPropertyInputl');
-  label.classList.add('property-label');
-  
-  input = document.createElement('input');
-  input.setAttribute('type', 'text');
-  input.setAttribute('id', 'YPosPropertyInput');
-  input.setAttribute('value', elem.y);
-  pair.appendChild(label);
-  pair.appendChild(input);
-  newDiv.appendChild(pair)
-  input.addEventListener('input', function(event) {
-    const currentValue = event.target.value;
-    const currentID = idInput.value
-    const currentShape = self.getShapeWithID(currentID)
-    currentShape.y = currentValue
-    self.redrawShapes(event)
-  });
+  propertyWindow.appendChild(pair)
 
 
-  pair = document.createElement('div');
-  pair.classList.add('property-pair-container')
-  label = document.createElement('label');
-  label.textContent = 'Tokens';
-  label.setAttribute('for', 'TokenPropertyInputl');
-  label.classList.add('property-label');
-  
-  input = document.createElement('input');
-  input.setAttribute('type', 'text');
-  input.setAttribute('id', 'TokenPropertyInput');
-  input.setAttribute('value', elem.tokens);
-  pair.appendChild(label);
-  pair.appendChild(input);
-  newDiv.appendChild(pair)
   input.addEventListener('input', function(event) {
     const currentValue = event.target.value;
+    var idInput = document.getElementById('id')
     const currentID = idInput.value
-    const currentShape = self.getShapeWithID(currentID)
-    currentShape.tokens = currentValue
-    self.redrawShapes(event)
+    const currentShape = canvas.getShapeWithID(currentID)
+    setter(currentShape, currentValue)
+    canvas.redrawShapes(event)
   });
+  return pair
+}
 
-  // Append the new div to the container
-  container.appendChild(newDiv);
-} 
+
+export function addCircleProperties(canvas, elem) {
+  const container = document.getElementById('property-editor');
+  // Create a new div element for the property
+  const propertyWindow = document.createElement('div');
+  const self = canvas;
+  function createLabelInputPair(labelText, extractor, setter) {
+    var newDiv = createLabelInputPair_(self, propertyWindow, elem, labelText, extractor, setter)
+    container.appendChild(newDiv);
+  }
+  
+  createLabelInputPair("id", (e) => e.id, (s, v) => s.id = v)
+  createLabelInputPair( "X Pos", (e) => e.x, (s, v) => s.x = v)
+  createLabelInputPair( "Y Pos", (e) => e.y, (s, v) => s.y = v)
+  createLabelInputPair( "Tokens", (e) => e.tokens, (s, v) => s.tokens = v)
+}
 
 
 export function addRectangleProperties(canvas, elem) {
   const container = document.getElementById('property-editor');
-
-  const self = canvas;
   // Create a new div element for the property
-  const newDiv = document.createElement('div');
-
-  // Create label and input elements
-  var pair = document.createElement('div');
-  pair.classList.add('property-pair-container')
-  var label = document.createElement('label');
-  label.textContent = 'Id';
-  label.setAttribute('for', 'IdPropertyInputl');
-  label.classList.add('property-label');
-
-  var idInput = document.createElement('input');
-  idInput.setAttribute('type', 'text');
-  idInput.setAttribute('id', 'IdPropertyInput');
-  idInput.setAttribute('value', elem.id);
-  idInput.classList.add('property-input');
-  pair.appendChild(label);
-  pair.appendChild(idInput);
-  newDiv.appendChild(pair)
-
-  pair = document.createElement('div');
-  pair.classList.add('property-pair-container')
-  label = document.createElement('label');
-  label.textContent = 'X Pos';
-  label.setAttribute('for', 'XPosPropertyInputl');
-  label.classList.add('property-label');
+  const propertyWindow = document.createElement('div');
+  const self = canvas;
+  function createLabelInputPair(labelText, extractor, setter) {
+    var newDiv = createLabelInputPair_(self, propertyWindow, elem, labelText, extractor, setter)
+    container.appendChild(newDiv);
+  }
   
-  var input = document.createElement('input');
-  input = document.createElement('input');
-  input.setAttribute('type', 'text');
-  input.setAttribute('id', 'XPosPropertyInput');
-  input.setAttribute('value', elem.x);
-  pair.appendChild(label);
-  pair.appendChild(input);
-  newDiv.appendChild(pair)
-  input.addEventListener('input', function(event) {
-    const currentValue = event.target.value;
-    const currentID = idInput.value
-    const currentShape = self.getShapeWithID(currentID)
-    currentShape.x = currentValue
-    self.redrawShapes(event)
-  });
-  
-  pair = document.createElement('div');
-  pair.classList.add('property-pair-container')
-  label = document.createElement('label');
-  label.textContent = 'Y Pos';
-  label.setAttribute('for', 'YPosPropertyInputl');
-  label.classList.add('property-label');
-  
-  input = document.createElement('input');
-  input.setAttribute('type', 'text');
-  input.setAttribute('id', 'YPosPropertyInput');
-  input.setAttribute('value', elem.y);
-  pair.appendChild(label);
-  pair.appendChild(input);
-  newDiv.appendChild(pair)
-  input.addEventListener('input', function(event) {
-    const currentValue = event.target.value;
-    const currentID = idInput.value
-    const currentShape = self.getShapeWithID(currentID)
-    currentShape.y = currentValue
-    self.redrawShapes(event)
-  });
-
-
-  pair = document.createElement('div');
-  pair.classList.add('property-pair-container')
-  label = document.createElement('label');
-  label.textContent = 'Tokens';
-  label.setAttribute('for', 'TokenPropertyInputl');
-  label.classList.add('property-label');
-  
-  input = document.createElement('input');
-  input.setAttribute('type', 'text');
-  input.setAttribute('id', 'TokenPropertyInput');
-  input.setAttribute('value', elem.tokens);
-  pair.appendChild(label);
-  pair.appendChild(input);
-  newDiv.appendChild(pair)
-  input.addEventListener('input', function(event) {
-    const currentValue = event.target.value;
-    const currentID = idInput.value
-    const currentShape = self.getShapeWithID(currentID)
-    currentShape.tokens = currentValue
-    self.redrawShapes(event)
-  });
-
-  // Append the new div to the container
-  container.appendChild(newDiv);
+  createLabelInputPair("id", (e) => e.id, (s, v) => s.id = v)
+  createLabelInputPair( "X Pos", (e) => e.x, (s, v) => s.x = v)
+  createLabelInputPair( "Y Pos", (e) => e.y, (s, v) => s.y = v)
 }

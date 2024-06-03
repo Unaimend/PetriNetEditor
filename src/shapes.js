@@ -658,7 +658,7 @@ export class Shape {
 
     this.$ctx.font = '20px Arial';
     this.$ctx.fillStyle = 'blue';
-    this.$ctx.fillText(this.label, this.x-textWidth/2, this.y - 4);
+    this.$ctx.fillText(this.label, this.x-textWidth/2, this.y + 5);
   }     
 
 }
@@ -749,7 +749,6 @@ export class Arc extends Shape {
   }
 
   draw(e) {
-    super.draw()
     var arrowSize = 10;
     this.$ctx.strokeStyle = this.fillColor;
     let startShape = this.$canvas.lookUpByID(this.startID)
