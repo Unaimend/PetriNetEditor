@@ -17,7 +17,18 @@ export class Canvas {
     this.lastSelectedElem = null
     this.arc = null
     this.sm = new StateMachine()
+    
 
+    this.viewportTransform = {
+      x: 0,
+      y: 0,
+      scale: 1
+    }
+    
+    this.previousX = 0
+    this.previousY = 0
+    console.log(this.canvas.width)
+    console.log(this.canvas.height)
 
     //https://observablehq.com/plot/getting-started Add d3 stuff to the canvas
     //const context = this.ctx;
@@ -56,6 +67,8 @@ export class Canvas {
 
 
     this.canvas.addEventListener('mousedown', (e) => {
+      this.previousX = e.clientX;
+      this.previousY = e.clientY;
       e.preventDefault();
       this.isDragging = true;
       if (this.boxSelectMode == true) {
@@ -63,7 +76,7 @@ export class Canvas {
         this.boxStartX = e.offsetX
         this.boxStartY = e.offsetY
       }
-      var elem = this.selectElement(e.offsetX, e.offsetY);
+      var elem = this.selectElement(e.offsetX - this.viewportTransform.x, e.offsetY - this.viewportTransform.y);
       this.addPropertyField(elem)
       this.redrawShapes()
     });
@@ -80,10 +93,13 @@ export class Canvas {
 
     this.canvas.addEventListener('mousemove', (e) => {
       if (this.isDragging) {
+
         if (this.selectedElem != null) {
           this.selectedElem.x = e.offsetX;
           this.selectedElem.y = e.offsetY;
           this.addPropertyField(this.selectedElem)
+        } else {
+          this.updatePanning(e)
         }
       }
 
@@ -161,6 +177,17 @@ export class Canvas {
 
   print(obj) {
   return console.log(JSON.parse(this.serialize(obj)))
+  }
+  
+  updatePanning(e) {
+    const localX = e.clientX;
+    const localY = e.clientY;
+  
+    this.viewportTransform.x += localX - this.previousX;
+    this.viewportTransform.y += localY - this.previousY;
+  
+    this.previousX = localX;
+    this.previousY = localY;
   }
 
   simulate() {
@@ -366,14 +393,18 @@ export class Canvas {
 
 
   addNewShape(e) {
-    if (!this.isIntersectingShape(e.offsetX, e.offsetY)) {
-      this.currentShape({x: e.offsetX, y: e.offsetY})
+    if (!this.isIntersectingShape(e.offsetX - this.viewportTransform.x, e.offsetY-this.viewportTransform.y)) {
+      this.currentShape({x: e.offsetX - this.viewportTransform.x, y: e.offsetY-this.viewportTransform.y})
     }
     this.redrawShapes()
   }
 
   redrawShapes() {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear canvas
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.ctx.clearRect(0, 0, 500, 500);
+    this.ctx.setTransform(this.viewportTransform.scale, 0, 0, this.viewportTransform.scale, this.viewportTransform.x, this.viewportTransform.y);
+    
+   
     for (const shape of this.shapes) {
       shape.draw()
     }

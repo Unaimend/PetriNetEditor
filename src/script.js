@@ -51,6 +51,11 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'r' || event.key === 'R') {
     c.currentShape = c.shapeCreator["rectangle"];
   }
+
+  if (event.key === 't' || event.key === 'T') {
+    console.log(document.getElementById('myCanvas').width)
+    console.log(document.getElementById('myCanvas').height)
+  }
 });
 
 const canvas = document.getElementById('myCanvas');
@@ -62,8 +67,10 @@ const main = document.getElementById('main');
 // Function to resize the canvas to fill its container
 function resizeCanvas() {
     // Set the canvas width and height to match the container's dimensions
-    canvas.width = 0.97 * main.clientWidth;
-    canvas.height = 0.95 * main.clientHeight;
+    canvas.width  = 500
+    canvas.height = 500
+    //canvas.width = 0.97 * main.clientWidth;
+    //canvas.height = 0.95 * main.clientHeight;
 }
 
 // Call resizeCanvas() initially and whenever the window is resized
