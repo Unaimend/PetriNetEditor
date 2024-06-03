@@ -72,7 +72,7 @@ export class Canvas {
     canvas.addEventListener("wheel", (e) => {
       this.updateZooming(e)
       this.redrawShapes()
-      console.log(e)
+  
     });
 
     this.canvas.addEventListener('mousemove', (e) => {
@@ -164,10 +164,10 @@ export class Canvas {
       console.log(`Mouseup left with state ${this.sm.state}`)
     });
 
-    //this.canvas.addEventListener('click', (e) => {
-    //  //console.log(`Click called with state ${this.sm.state}`)
-    //  this.redrawShapes()
-    //});
+    this.canvas.addEventListener('click', (e) => {
+      console.log(`Click called with state ${this.sm.state}`)
+      this.redrawShapes()
+    });
 
     this.canvas.addEventListener('dblclick', (e) => {
       console.log(`dblClick called with state ${this.sm.state}`)
@@ -231,6 +231,14 @@ export class Canvas {
     this.previousX = localX;
     this.previousY = localY;
   }
+
+  getClickCoordinates(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    return {x: x, y };
+  }
+
   
   updateZooming(e) {
     // Adapted from https://harrisonmilbradt.com/articles/canvas-panning-and-zooming
@@ -244,7 +252,6 @@ export class Canvas {
    
 
    var newScale = this.viewportTransform.scale += e.deltaY * -0.001;
-   console.log(newScale)
    newScale = Math.min(newScale, 2)
    newScale = Math.max( newScale, 0.6)
    const newX = localX - (localX - oldX) * (newScale / previousScale);
@@ -465,16 +472,18 @@ export class Canvas {
       };
     this.print(transformedPoint)
     if (!this.isIntersectingShape(e.offsetX - this.viewportTransform.x, e.offsetY-this.viewportTransform.y)) {
-      this.currentShape({
-        x: ((e.offsetX - this.viewportTransform.x) / this.viewportTransform.scale),
-        y: ((e.offsetY-this.viewportTransform.y) /this.viewportTransform.scale)
-      })
+      this.currentShape(this.transform({x : e.offsetX, y: e.offsetY}))
     }
     this.redrawShapes()
   }
 
+  transform({x, y}) {
+    return {
+        x: ((x - this.viewportTransform.x) / this.viewportTransform.scale),
+        y: ((y - this.viewportTransform.y) / this.viewportTransform.scale)
+      }
+  }
   redrawShapes() {
-    var zoomCenter = {x: 250, y: 250}
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.clearRect(0, 0, 500, 500);
     this.ctx.setTransform(1, 0, 0, 1, this.viewportTransform.x, this.viewportTransform.y);
