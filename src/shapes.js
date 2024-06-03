@@ -107,14 +107,12 @@ export class Canvas {
       if(this.sm.state == STATES.ARC_STARTED) {
         var elem = this.selectElement(e.offsetX - this.viewportTransform.x, e.offsetY - this.viewportTransform.y);
         if(elem == null) {
-          var startShape = this.lookUpByID(this.arc.startID)
-          startShape.fillColor = "blue"
-          this.arc = null
-          this.sm.state = STATES.NOTHING_SELECTED
-          console.log("Arc aborted")
-          this.redrawShapes()
-          return
-        } 
+          return this.cancelArc()
+        } else {
+          var startID = this.lookUpByID(this.arc.startID)
+          this.print(startID)
+          return this.createArc(elem)
+        }
       }
       
       if (this.boxSelectMode == true) {
@@ -156,18 +154,10 @@ export class Canvas {
         }
       }
       this.sm.state = STATES.NOTHING_SELECTED
-      //var elem = this.selectElement(e.offsetX - this.viewportTransform.x, e.offsetY - this.viewportTransform.y);
-      //if (elem == null) {
-      //  this.sm.state = STATES.NOTHING_SELECTED
-      //}
       this.redrawShapes()
       console.log(`Mouseup left with state ${this.sm.state}`)
     });
 
-    this.canvas.addEventListener('click', (e) => {
-      console.log(`Click called with state ${this.sm.state}`)
-      this.redrawShapes()
-    });
 
     this.canvas.addEventListener('dblclick', (e) => {
       console.log(`dblClick called with state ${this.sm.state}`)
@@ -175,14 +165,7 @@ export class Canvas {
       console.log(`Element of arc start`)
       console.log(elem)
       if (elem == null) {
-        // Get tje start shape from the current arc and reset its color
-        var startShape = this.lookUpByID(this.arc.startID)
-        startShape.fillColor = "blue"
-        this.arc = null 
-        this.sm.state = STATES.NOTHING_SELECTED
-        console.log("Arc aborted")
-        this.redrawShapes()
-        return
+        return this.cancelArc()
       }
       if(elem != null) {
         if(this.sm.state != STATES.ARC_STARTED) {
@@ -191,24 +174,7 @@ export class Canvas {
           console.log(`Started arc from element with id ${elem.id}`)
           this.sm.state = STATES.ARC_STARTED
         } else {
-          var startShape = this.lookUpByID(this.arc.startID)
-          // If start is a rectnagle we are only allowed to connect to a Rectangle 
-          // and the other way around
-          if((startShape instanceof Circle && elem instanceof Rectangle ) || 
-            (startShape instanceof Rectangle && elem instanceof Circle )) {
-            console.log(`Started arc from element with id ${startShape.id} to ${elem.id}`)
-            // End arc
-            this.arc.endID = elem.id
-            // So we can delete them if we delete the nodes
-            startShape.arcStart = true
-            startShape.fillColor = "blue"
-            elem.arcEnd = true
-            startShape.arcIDS.push(this.arc.id)
-            elem.arcIDS.push(this.arc.id)
-            this.shapes.push(this.arc)
-            this.arc = null
-            this.sm.state = STATES.NOTHING_SELECTED
-          } 
+          this.createArc(elem)
         }
         this.redrawShapes()
       }
@@ -218,6 +184,35 @@ export class Canvas {
 
   print(obj) {
   return console.log(JSON.parse(this.serialize(obj)))
+  }
+
+  cancelArc() {
+    var startShape = this.lookUpByID(this.arc.startID)
+    startShape.fillColor = "blue"
+    this.arc = null
+    this.sm.state = STATES.NOTHING_SELECTED
+    console.log("Arc aborted")
+    this.redrawShapes()
+  } 
+
+  createArc(elem) {
+    var startShape = this.lookUpByID(this.arc.startID)
+    // If start is a rectnagle we are only allowed to connect to a Rectangle 
+    // and the other way around
+    if((startShape instanceof Circle && elem instanceof Rectangle ) || 
+      (startShape instanceof Rectangle && elem instanceof Circle )) {
+      console.log(`Started arc from element with id ${startShape.id} to ${elem.id}`)
+      // End arc
+      this.arc.endID = elem.id
+      // So we can delete them if we delete the nodes
+      startShape.arcStart = true
+      startShape.fillColor = "blue"
+      elem.arcEnd = true
+      startShape.arcIDS.push(this.arc.id)
+      elem.arcIDS.push(this.arc.id)
+      this.shapes.push(this.arc)
+      this.arc = null
+    } 
   }
   
   updatePanning(e) {
@@ -464,13 +459,6 @@ export class Canvas {
   }
 
   addNewShape(e) {
-      const point = {x: 0, y: 0};
-      const matrix = this.ctx.getTransform();
-      const transformedPoint = {
-        x: matrix.a * point.x + matrix.c * point.y + matrix.e,
-        y: matrix.b * point.x + matrix.d * point.y + matrix.f,
-      };
-    this.print(transformedPoint)
     if (!this.isIntersectingShape(e.offsetX - this.viewportTransform.x, e.offsetY-this.viewportTransform.y)) {
       this.currentShape(this.transform({x : e.offsetX, y: e.offsetY}))
     }

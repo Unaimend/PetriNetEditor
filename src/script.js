@@ -51,10 +51,8 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'r' || event.key === 'R') {
     c.currentShape = c.shapeCreator["rectangle"];
   }
-
-  if (event.key === 't' || event.key === 'T') {
-    console.log(document.getElementById('myCanvas').width)
-    console.log(document.getElementById('myCanvas').height)
+  if (event.key === 'Escape') {
+    c.cancelArc()
   }
 });
 
