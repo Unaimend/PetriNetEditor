@@ -68,6 +68,13 @@ export class Canvas {
     this.mouseMoved = false
 
 
+    
+    canvas.addEventListener("wheel", (e) => {
+      this.updateZooming(e)
+      this.redrawShapes()
+      console.log(e)
+    });
+
     this.canvas.addEventListener('mousemove', (e) => {
       this.mouseMoved = true
       console.log(this.mouseMoved)
@@ -145,9 +152,10 @@ export class Canvas {
       if (this.mouseMoved == false) {
         if(this.boxSelectMode == false) {
           this.addNewShape(e)
-          this.sm.state = STATES.NOTHING_SELECTED
+          this.mouseMoved = false
         }
       }
+      this.sm.state = STATES.NOTHING_SELECTED
       //var elem = this.selectElement(e.offsetX - this.viewportTransform.x, e.offsetY - this.viewportTransform.y);
       //if (elem == null) {
       //  this.sm.state = STATES.NOTHING_SELECTED
@@ -174,9 +182,10 @@ export class Canvas {
         this.sm.state = STATES.NOTHING_SELECTED
         console.log("Arc aborted")
         this.redrawShapes()
+        return
       }
       if(elem != null) {
-        if(this.sm.state != STATES.ARC_STARTED && this.arc == null) {
+        if(this.sm.state != STATES.ARC_STARTED) {
           this.arc = new Arc(this, elem.id, elem.id)
           elem.fillColor = "yellow"
           console.log(`Started arc from element with id ${elem.id}`)
@@ -212,6 +221,7 @@ export class Canvas {
   }
   
   updatePanning(e) {
+    // Adapted from  https://harrisonmilbradt.com/articles/canvas-panning-and-zooming
     const localX = e.clientX;
     const localY = e.clientY;
   
@@ -221,6 +231,29 @@ export class Canvas {
     this.previousX = localX;
     this.previousY = localY;
   }
+  
+  updateZooming(e) {
+    // Adapted from https://harrisonmilbradt.com/articles/canvas-panning-and-zooming
+   let oldX = this.viewportTransform.x;
+   let oldY = this.viewportTransform.y;
+
+   const localX = e.clientX;
+   const localY = e.clientY;
+
+   const previousScale = this.viewportTransform.scale;
+   
+
+   var newScale = this.viewportTransform.scale += e.deltaY * -0.001;
+   console.log(newScale)
+   newScale = Math.min(newScale, 2)
+   newScale = Math.max( newScale, 0.6)
+   const newX = localX - (localX - oldX) * (newScale / previousScale);
+   const newY = localY - (localY - oldY) * (newScale / previousScale);
+
+   this.viewportTransform.x = newX;
+   this.viewportTransform.y = newY;
+   this.viewportTransform.scale = newScale;
+  } 
 
   simulate() {
     console.log("HEY")
@@ -423,18 +456,30 @@ export class Canvas {
     this.redrawShapes()
   }
 
-
   addNewShape(e) {
+      const point = {x: 0, y: 0};
+      const matrix = this.ctx.getTransform();
+      const transformedPoint = {
+        x: matrix.a * point.x + matrix.c * point.y + matrix.e,
+        y: matrix.b * point.x + matrix.d * point.y + matrix.f,
+      };
+    this.print(transformedPoint)
     if (!this.isIntersectingShape(e.offsetX - this.viewportTransform.x, e.offsetY-this.viewportTransform.y)) {
-      this.currentShape({x: e.offsetX - this.viewportTransform.x, y: e.offsetY-this.viewportTransform.y})
+      this.currentShape({
+        x: ((e.offsetX - this.viewportTransform.x) / this.viewportTransform.scale),
+        y: ((e.offsetY-this.viewportTransform.y) /this.viewportTransform.scale)
+      })
     }
     this.redrawShapes()
   }
 
   redrawShapes() {
+    var zoomCenter = {x: 250, y: 250}
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.clearRect(0, 0, 500, 500);
-    this.ctx.setTransform(this.viewportTransform.scale, 0, 0, this.viewportTransform.scale, this.viewportTransform.x, this.viewportTransform.y);
+    this.ctx.setTransform(1, 0, 0, 1, this.viewportTransform.x, this.viewportTransform.y);
+    
+    this.ctx.scale(this.viewportTransform.scale, this.viewportTransform.scale)
     
    
     for (const shape of this.shapes) {
