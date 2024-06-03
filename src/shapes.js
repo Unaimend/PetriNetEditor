@@ -68,12 +68,14 @@ export class Canvas {
     this.mouseMoved = false
 
 
-    
-    canvas.addEventListener("wheel", (e) => {
-      this.updateZooming(e)
-      this.redrawShapes()
+    // Reenable to fix update 
+    // need to trasnform all the x,y coordinates before this works 
+    // properly
+    //canvas.addEventListener("wheel", (e) => {
+    //  this.updateZooming(e)
+    //  this.redrawShapes()
   
-    });
+    //});
 
     this.canvas.addEventListener('mousemove', (e) => {
       this.mouseMoved = true
@@ -338,6 +340,7 @@ export class Canvas {
             sh.arcEnd  = shape.arcEnd
             sh.arcIDS = shape.arcIDS
             sh.tokens = shape.tokens
+            sh.label = shape.label
             this.shapes.push(sh)
             break
           }
@@ -348,6 +351,7 @@ export class Canvas {
             sh.arcEnd  = shape.arcEnd
             sh.arcIDS = shape.arcIDS
             sh.tokens = shape.tokens
+            sh.label = shape.label
             this.shapes.push(sh)
             break
           }
@@ -355,6 +359,7 @@ export class Canvas {
             var sh = new Arc(this, shape.startID, shape.endID, shape.fillColor)
             sh.id = shape.id
             sh.tokens = shape.tokens
+            sh.label = shape.label
             this.shapes.push(sh)
             break
           }
@@ -473,7 +478,7 @@ export class Canvas {
   }
   redrawShapes() {
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-    this.ctx.clearRect(0, 0, 500, 500);
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.setTransform(1, 0, 0, 1, this.viewportTransform.x, this.viewportTransform.y);
     
     this.ctx.scale(this.viewportTransform.scale, this.viewportTransform.scale)
@@ -633,6 +638,7 @@ export class Shape {
     this.$ctx = canvas.ctx 
     this.x = x;
     this.y = y; 
+    this.label = ""
     this.fillColor = fillColor
     // Used in removal and moving of nodes
     this.isSelected = false
@@ -645,7 +651,15 @@ export class Shape {
     this.tokens = 1
   }
   getBoundingBox() {} 
-  draw(e, x, y) {}     
+  draw() {
+
+    const textMetrics = this.$ctx.measureText(this.label);
+    const textWidth = textMetrics.width;
+
+    this.$ctx.font = '20px Arial';
+    this.$ctx.fillStyle = 'blue';
+    this.$ctx.fillText(this.label, this.x-textWidth/2, this.y - 4);
+  }     
 
 }
 
@@ -656,6 +670,7 @@ export class Circle extends Shape{
     this.type = "Circle"
   }
   draw(debug = true) {
+    super.draw()
     this.$ctx.beginPath();
     this.$ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     this.$ctx.fillStyle = this.fillColor;
@@ -699,13 +714,13 @@ export class Rectangle extends Shape{
   }
 
   draw(e) {
+    super.draw(e)
     this.$ctx.beginPath();
     this.$ctx.fillStyle = this.fillColor;
     this.$ctx.fillRect(this.x, this.y, this.width, this.height);
     this.$ctx.fillStyle = "black";
     this.$ctx.strokeRect(this.x, this.y, this.width, this.height);
     this.$ctx.stroke();
-
     this.$ctx.fillStyle = "green";
   }
 
@@ -734,6 +749,7 @@ export class Arc extends Shape {
   }
 
   draw(e) {
+    super.draw()
     var arrowSize = 10;
     this.$ctx.strokeStyle = this.fillColor;
     let startShape = this.$canvas.lookUpByID(this.startID)

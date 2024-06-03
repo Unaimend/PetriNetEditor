@@ -65,8 +65,8 @@ const main = document.getElementById('main');
 // Function to resize the canvas to fill its container
 function resizeCanvas() {
     // Set the canvas width and height to match the container's dimensions
-    canvas.width  = 500
-    canvas.height = 500
+    canvas.width  = 1000
+    canvas.height = 1000
     //canvas.width = 0.97 * main.clientWidth;
     //canvas.height = 0.95 * main.clientHeight;
 }
