@@ -25,6 +25,8 @@ export class Canvas {
       scale: 1
     }
     
+
+
     this.previousX = 0
     this.previousY = 0
     console.log(this.canvas.width)
@@ -63,46 +65,24 @@ export class Canvas {
     this.boxSelectMode = false
 
     this.selectedElements = []
+    this.mouseMoved = false
 
-
-
-    this.canvas.addEventListener('mousedown', (e) => {
-      this.previousX = e.clientX;
-      this.previousY = e.clientY;
-      e.preventDefault();
-      this.isDragging = true;
-      if (this.boxSelectMode == true) {
-        this.isBoxSelecting = true;
-        this.boxStartX = e.offsetX
-        this.boxStartY = e.offsetY
-      }
-      var elem = this.selectElement(e.offsetX - this.viewportTransform.x, e.offsetY - this.viewportTransform.y);
-      this.addPropertyField(elem)
-      this.redrawShapes()
-    });
-
-
-    this.canvas.addEventListener('click', (e) => {
-      this.isDragging = false
-      console.log(`Click called with state ${this.sm.state}`)
-      if(this.sm.state == STATES.NOTHING_SELECTED && this.boxSelectMode == false) {
-        this.addNewShape(e)
-      }
-      this.redrawShapes()
-    });
 
     this.canvas.addEventListener('mousemove', (e) => {
-      if (this.isDragging) {
-
+      this.mouseMoved = true
+      console.log(this.mouseMoved)
+      //console.log(`Mouse move called with state ${this.sm.state}`)
+      if (this.sm.state == STATES.IS_DRAGGING) {
         if (this.selectedElem != null) {
-          this.selectedElem.x = e.offsetX;
-          this.selectedElem.y = e.offsetY;
+          this.selectedElem.x = e.offsetX - this.viewportTransform.x
+          this.selectedElem.y = e.offsetY - this.viewportTransform.y
           this.addPropertyField(this.selectedElem)
-        } else {
-          this.updatePanning(e)
-        }
+        } 
       }
-
+      if (this.sm.state == STATES.IS_PANNING) {
+        this.updatePanning(e)
+      }
+      
       // This REALLY kills performace
       this.redrawShapes()
       if (this.isBoxSelecting) {
@@ -110,9 +90,48 @@ export class Canvas {
       }
     });
 
-    this.canvas.addEventListener('mouseup', (e) => {
+    this.canvas.addEventListener('mousedown', (e) => {
+      this.mouseMoved = false
+      console.log(`Mousedown called with state ${this.sm.state}`)
+      this.previousX = e.clientX;
+      this.previousY = e.clientY;
       e.preventDefault();
-      this.isDragging = false;
+
+      if(this.sm.state == STATES.ARC_STARTED) {
+        var elem = this.selectElement(e.offsetX - this.viewportTransform.x, e.offsetY - this.viewportTransform.y);
+        if(elem == null) {
+          var startShape = this.lookUpByID(this.arc.startID)
+          startShape.fillColor = "blue"
+          this.arc = null
+          this.sm.state = STATES.NOTHING_SELECTED
+          console.log("Arc aborted")
+          this.redrawShapes()
+          return
+        } 
+      }
+      
+      if (this.boxSelectMode == true) {
+        this.isBoxSelecting = true;
+        this.boxStartX = e.offsetX
+        this.boxStartY = e.offsetY
+      }
+      var elem = this.selectElement(e.offsetX - this.viewportTransform.x, e.offsetY - this.viewportTransform.y);
+      //console.log(`Selected ${elem}`)
+      if(elem == null) {
+        this.sm.state = STATES.IS_PANNING
+      } else {
+        this.sm.state = STATES.IS_DRAGGING
+      } 
+      this.addPropertyField(elem)
+      this.redrawShapes()
+      console.log(`Mousedown left with state ${this.sm.state}`)
+    });
+
+    this.canvas.addEventListener('mouseup', (e) => {
+      //console.log("Mouseup movestats: ", this.mouseMoved)
+      console.log(`Mouseup called with state ${this.sm.state}`)
+
+      e.preventDefault();
       if (this.selectedElem != null) {
         this.selectedElem.fillColor = "blue";
         this.selectedElem = null
@@ -122,18 +141,32 @@ export class Canvas {
       }
       
       this.isBoxSelecting = false
-      this.redrawShapes()
-      return false
 
+      if (this.mouseMoved == false) {
+        if(this.boxSelectMode == false) {
+          this.addNewShape(e)
+          this.sm.state = STATES.NOTHING_SELECTED
+        }
+      }
+      //var elem = this.selectElement(e.offsetX - this.viewportTransform.x, e.offsetY - this.viewportTransform.y);
+      //if (elem == null) {
+      //  this.sm.state = STATES.NOTHING_SELECTED
+      //}
+      this.redrawShapes()
+      console.log(`Mouseup left with state ${this.sm.state}`)
     });
 
-    this.canvas.addEventListener('dblclick', (e) => {
+    //this.canvas.addEventListener('click', (e) => {
+    //  //console.log(`Click called with state ${this.sm.state}`)
+    //  this.redrawShapes()
+    //});
 
-      var elem = this.startArc(e.offsetX, e.offsetY);
+    this.canvas.addEventListener('dblclick', (e) => {
+      console.log(`dblClick called with state ${this.sm.state}`)
+      var elem = this.startArc(e.offsetX - this.viewportTransform.x, e.offsetY - this.viewportTransform.y);
       console.log(`Element of arc start`)
       console.log(elem)
       if (elem == null) {
-        console.log(this.arc)
         // Get tje start shape from the current arc and reset its color
         var startShape = this.lookUpByID(this.arc.startID)
         startShape.fillColor = "blue"
@@ -141,10 +174,9 @@ export class Canvas {
         this.sm.state = STATES.NOTHING_SELECTED
         console.log("Arc aborted")
         this.redrawShapes()
-        return
       }
       if(elem != null) {
-        if(this.sm.state != STATES.ARC_STARTED) {
+        if(this.sm.state != STATES.ARC_STARTED && this.arc == null) {
           this.arc = new Arc(this, elem.id, elem.id)
           elem.fillColor = "yellow"
           console.log(`Started arc from element with id ${elem.id}`)

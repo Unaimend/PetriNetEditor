@@ -3,12 +3,12 @@
 enum STATES {
   NOTHING_SELECTED = "NOTHING_SELECTED",
   // Circler is last selected item
-  CIRCLE_SELECTED = "CIRCLE_SELECTED",
-  // Rectangle is last selected item
-  RECTANGLE_SELECTED = "RECTANGLE_SELECTED",
+  SHAPE_SELECTED = "SHAPE_SELECTED",
   // ARc is last selected item
   ARC_SELECTED = "ARC_SELECTED",
   ARC_STARTED = "ARC_STARTED",
+  IS_DRAGGING = "IS_DRAGGING",
+  IS_PANNING = "IS_PANNING",
 }
 
 class StateMachine {
