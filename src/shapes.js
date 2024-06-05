@@ -259,7 +259,33 @@ export class Canvas {
    this.viewportTransform.scale = newScale;
   } 
 
+
+  simulateNonDeterministic () {
+    for(var i in this.shapes) {
+      var s = this.shapes[i]
+      // Do the actual fireing
+      if(s instanceof Rectangle) {
+        var incomingEdges = s.getIncomingEdges()
+        var outgoingEdges = s.getOutgoingEdges()
+        var tokens = incomingEdges.map(obj => this.lookUpByID(obj.startID).tokens) 
+        var minTokenCount = Math.min(...tokens)
+        this.print("Rectangle")
+        this.print(s.id)
+        this.print(tokens)
+        this.print(minTokenCount)
+        this.print("-------")
+        if(minTokenCount > 0) {
+          incomingEdges.map(obj => this.lookUpByID(obj.startID).tokens -= 1)
+          outgoingEdges.map(obj => this.lookUpByID(obj.endID).tokens += 1)
+        }
+      }
+    }
+    this.redrawShapes()
+  }
+
   simulate() {
+    this.print(this.shapes)
+    console.log("++++++++++++++++++++++")
     console.log("HEY")
     for(var s of this.shapes) {
       // Go through all Rechtangles and check if they are able to fire.
@@ -270,17 +296,38 @@ export class Canvas {
           var connectedArc = this.lookUpByID(connectedArcsID)
           // Get the start object of the arc and check its token amount
           var startObj = this.lookUpByID(connectedArc.startID)
-          var endObj = this.lookUpByID(connectedArc.endID)
-          // I incoming arc (end id = myself.id has no token left)
-          //  TODO This conditions fails in simple_tokens2.json with an uneven amount of startToken
-          if(startObj.tokens == 0 /*&& endObj.id == s.id*/) {
-            s.canFire = false
-            break
+          if(connectedArc.startID == s.id) {
+            //this.print("K")
+            //this.print(s.getOutgoingEdges().length)
+            //if(s.getOutgoingEdges().length > 1) {
+            //  // Image have a circle with two outgoing edges that each consume 
+            //  // 1 token and we start with 3 tokens in the circle. What happens after
+            //  // two steps? We either stop wuth one token after one step or we randomly
+            //  // pick one of the ougoing edges to put the last token ito
+            //  // But this is only necessary if the min of incoming tokens is smaller the the 
+            //  // amount of outgoing edges.
+            //  this.print("DWDN")
+            //  var incomingEdges = s.getIncomingEdges()
+            //  for(var edge of incomingEdges) {
+            //    var startCircleID = edge.startID
+            //    var startCircle = this.lookUpByID(startCircleID)
+            //    this.print("DWD")
+            //    this.print(startCircle)
+            //  }
+            //}
+            s.canFire = true
+          } else {
+            //INCOMING EDGE
+            var endObj = this.lookUpByID(connectedArc.endID)
+            if(startObj.tokens == 0 /*&& endObj.id == s.id*/) {
+              s.canFire = false
+              break
+            }
           }
-          s.canFire = true
         }
       }
     }
+    this.print(this.shapes)
     console.log("---------------------")
     for(var i in this.shapes) {
       var s = this.shapes[i]
@@ -292,12 +339,12 @@ export class Canvas {
             // Get the start object of the arc and check its token amount
             var startObj = this.lookUpByID(connectedArc.startID)
             var endObj = this.lookUpByID(connectedArc.endID)
-              startObj.tokens -= 1
-              // Todo One Input two output would create tokens out of nothing
-              endObj.tokens += 1
-              s.canFire = false
-            }
+            // TODO REPEAT THE TOKEN CHECK
+            startObj.tokens -= 1
+            endObj.tokens += 1
+            s.canFire = false
           }
+        }
       }
     }
     this.redrawShapes()
@@ -348,6 +395,7 @@ export class Canvas {
             var sh = new Rectangle(this, shape.x, shape.y, shape.width, shape.height, shape.fillColor)
             sh.id = shape.id
             sh.arcStart = shape.arcStart
+            sh.canFire = shape.canFire
             sh.arcEnd  = shape.arcEnd
             sh.arcIDS = shape.arcIDS
             sh.tokens = shape.tokens
@@ -373,6 +421,7 @@ export class Canvas {
     } catch (error) {
         console.error('Error:', error);
     }
+    this.print(this.shapes)
   }
 
   deleteAllChildren() {
@@ -649,8 +698,32 @@ export class Shape {
     // For rects and circles this is the current amount
     // For arc in is the throughput
     this.tokens = 1
+
+
   }
   getBoundingBox() {} 
+
+  getIncomingEdges() {
+    var incomingEdges = []
+    for(var arcID of this.arcIDS) {
+      var arc = this.$canvas.lookUpByID(arcID)
+      if(arc.endID == this.id) {
+        incomingEdges.push(arc)
+      }
+    }
+    return incomingEdges
+  }
+  getOutgoingEdges() {
+    var outgoingEdges = []
+    for(var arcID of this.arcIDS) {
+      var arc = this.$canvas.lookUpByID(arcID)
+      if(arc.startID == this.id) {
+        outgoingEdges.push(arc)
+      }
+    }
+    return outgoingEdges
+  }
+
   draw() {
 
     const textMetrics = this.$ctx.measureText(this.label);
@@ -713,6 +786,7 @@ export class Rectangle extends Shape{
     this.canFire = false
   }
 
+
   draw(e) {
     super.draw(e)
     this.$ctx.beginPath();
@@ -754,8 +828,26 @@ export class Arc extends Shape {
     let startShape = this.$canvas.lookUpByID(this.startID)
     let endShape = this.$canvas.lookUpByID(this.endID)
 
-    this.$ctx.moveTo(startShape.x, startShape.y);
-    this.$ctx.lineTo(endShape.x, endShape.y, );
+
+    
+    if (startShape.x <= endShape.x) {
+      const controlPoint = {
+          x: (startShape.x + endShape.x) / 2,
+          y: ((startShape.y + endShape.y) / 2) - 20
+      };
+      this.$ctx.moveTo(startShape.x, startShape.y);
+      this.$ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, endShape.x, endShape.y);
+    } else {
+      const controlPoint = {
+          x: (startShape.x + endShape.x) / 2,
+          y: ((startShape.y + endShape.y) / 2) + 20
+      }
+      this.$ctx.moveTo(endShape.x, endShape.y);
+      this.$ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, startShape.x, startShape.y);
+    } 
+
+
+    //this.$ctx.lineTo(endShape.x, endShape.y, );
     this.$ctx.stroke();
 
     // Calculate angle of the line

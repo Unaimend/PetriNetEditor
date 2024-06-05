@@ -25,7 +25,31 @@ function createLabelInputPair_(canvas, propertyWindow, elem, labelText, extracto
     setter(currentShape, currentValue)
     canvas.redrawShapes(event)
   });
+
+
+  input.addEventListener('keydown', (event) => {
+           event.stopPropagation(); // Prevent event from propagating
+       });
   return pair
+
+}
+
+
+
+
+function createArcList_(canvas, propertyWindow, elem) {
+  var arcList = []
+  for(var id of elem.arcIDS) {
+    var pair = document.createElement('div');
+    pair.classList.add('property-pair-container')
+    var label = document.createElement('label');
+    label.textContent = id;
+    label.classList.add('property-label');
+    arcList.push(pair)
+    pair.appendChild(label);
+    propertyWindow.appendChild(pair)
+  }
+  return arcList
 }
 
 
@@ -42,7 +66,7 @@ export function addCircleProperties(canvas, elem) {
   createLabelInputPair("id", (e) => e.id, (s, v) => s.id = v)
   createLabelInputPair( "X Pos", (e) => e.x, (s, v) => s.x = v)
   createLabelInputPair( "Y Pos", (e) => e.y, (s, v) => s.y = v)
-  createLabelInputPair( "Tokens", (e) => e.tokens, (s, v) => s.tokens = v)
+  createLabelInputPair( "Tokens", (e) => e.tokens, (s, v) => s.tokens = parseInt(v))
   createLabelInputPair( "Label", (e) => e.label, (s, v) => s.label= v)
 }
 
@@ -52,13 +76,23 @@ export function addRectangleProperties(canvas, elem) {
   // Create a new div element for the property
   const propertyWindow = document.createElement('div');
   const self = canvas;
+  
   function createLabelInputPair(labelText, extractor, setter) {
     var newDiv = createLabelInputPair_(self, propertyWindow, elem, labelText, extractor, setter)
     container.appendChild(newDiv);
   }
   
+  function createArcList() { 
+    var newDivs = createArcList_(self, propertyWindow, elem)
+    newDivs.map((x) => container.appendChild(x))
+  }
+
+
+  
   createLabelInputPair("id", (e) => e.id, (s, v) => s.id = v)
   createLabelInputPair( "X Pos", (e) => e.x, (s, v) => s.x = v)
   createLabelInputPair( "Y Pos", (e) => e.y, (s, v) => s.y = v)
+  createLabelInputPair( "Tokens", (e) => e.tokens, (s, v) => s.tokens = v)
   createLabelInputPair( "Label", (e) => e.label, (s, v) => s.label= v)
+  createArcList()
 }

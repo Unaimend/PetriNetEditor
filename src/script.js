@@ -32,6 +32,10 @@ document.getElementById('simulate-btn').addEventListener('click',
     c.simulate()
   });
 
+document.getElementById('simulateND-btn').addEventListener('click', 
+  () => {
+    c.simulateNonDeterministic()
+  });
 
 document.getElementById('debug-btn').addEventListener('click', 
   () => {

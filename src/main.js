@@ -38,22 +38,24 @@ function createWindow() {
   
   // Function to open the open dialog
   const openFileDialog = async () => {
-    var path = await dialog.showOpenDialog(win, {
-      title: 'Open File', // Title of the dialog
-      defaultPath: app.getPath('documents'), // Default directory to open
-      buttonLabel: 'Open', // Label for the open button
-      filters: [
-        { name: 'Petri Nets', extensions: ['json'] }, // Limit file types to .txt
-        { name: 'All Files', extensions: ['*'] } // Allow all file types
-      ],
-      properties: ['openFile'] // Allow only file selection (not directories)
-    })
-    console.log(path)
-    if (!path.canceled && path.filePaths.length > 0) {
-      console.log('Selected file path:', path.filePaths[0]);
-      var c = fs.readFileSync(path.filePaths[0], { encoding: 'utf8', flag: 'r' });
+    //var path = await dialog.showOpenDialog(win, {
+    //  title: 'Open File', // Title of the dialog
+    //  defaultPath: app.getPath('documents'), // Default directory to open
+    //  buttonLabel: 'Open', // Label for the open button
+    //  filters: [
+    //    { name: 'Petri Nets', extensions: ['json'] }, // Limit file types to .txt
+    //    { name: 'All Files', extensions: ['*'] } // Allow all file types
+    //  ],
+    //  properties: ['openFile'] // Allow only file selection (not directories)
+    //})
+    //console.log(path)
+    //if (!path.canceled && path.filePaths.length > 0) {
+    //  console.log('Selected file path:', path.filePaths[0]);
+      var temp = "/home/td/Documents/glyco5_1.json"
+      var c = fs.readFileSync(temp, { encoding: 'utf8', flag: 'r' });
+      console.log(c)
       return c  // Read the selected file
-    }
+    //}
   };
 
 
