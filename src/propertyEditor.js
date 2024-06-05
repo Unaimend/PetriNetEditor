@@ -86,13 +86,30 @@ export function addRectangleProperties(canvas, elem) {
     var newDivs = createArcList_(self, propertyWindow, elem)
     newDivs.map((x) => container.appendChild(x))
   }
-
-
   
   createLabelInputPair("id", (e) => e.id, (s, v) => s.id = v)
   createLabelInputPair( "X Pos", (e) => e.x, (s, v) => s.x = v)
   createLabelInputPair( "Y Pos", (e) => e.y, (s, v) => s.y = v)
-  createLabelInputPair( "Tokens", (e) => e.tokens, (s, v) => s.tokens = v)
+  createLabelInputPair( "Tokens", (e) => e.tokens, (s, v) => s.tokens = parseInt(v))
   createLabelInputPair( "Label", (e) => e.label, (s, v) => s.label= v)
   createArcList()
+}
+
+
+export function addArcProperties(canvas, elem) {
+  const container = document.getElementById('property-editor');
+  // Create a new div element for the property
+  const propertyWindow = document.createElement('div');
+  const self = canvas;
+  
+  function createLabelInputPair(labelText, extractor, setter) {
+    var newDiv = createLabelInputPair_(self, propertyWindow, elem, labelText, extractor, setter)
+    container.appendChild(newDiv);
+  }
+  
+  
+  createLabelInputPair("id", (e) => e.id, (s, v) => s.id = v)
+  createLabelInputPair( "X Pos", (e) => e.x, (s, v) => s.x = v)
+  createLabelInputPair( "Y Pos", (e) => e.y, (s, v) => s.y = v)
+  createLabelInputPair( "Weight", (e) => e.edgeWeight, (s, v) => s.edgeWeight = parseInt(v))
 }

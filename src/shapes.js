@@ -1,4 +1,4 @@
-import {addCircleProperties, addRectangleProperties}  from './propertyEditor.js';
+import {addCircleProperties, addRectangleProperties, addArcProperties}  from './propertyEditor.js';
 import { STATES, StateMachine} from './stateMachine.js';
 
 export class Canvas {
@@ -275,8 +275,8 @@ export class Canvas {
         this.print(minTokenCount)
         this.print("-------")
         if(minTokenCount > 0) {
-          incomingEdges.map(obj => this.lookUpByID(obj.startID).tokens -= 1)
-          outgoingEdges.map(obj => this.lookUpByID(obj.endID).tokens += 1)
+          incomingEdges.map(obj => this.lookUpByID(obj.startID).tokens -= obj.edgeWeight)
+          outgoingEdges.map(obj => this.lookUpByID(obj.endID).tokens += obj.edgeWeight)
         }
       }
     }
@@ -408,6 +408,7 @@ export class Canvas {
             sh.id = shape.id
             sh.tokens = shape.tokens
             sh.label = shape.label
+            sh.edgeWeight = shape.edgeWeight ? shape.edgeWeight : 1
             this.shapes.push(sh)
             break
           }
@@ -449,6 +450,9 @@ export class Canvas {
     
     if(elem instanceof Rectangle) {
       addRectangleProperties(this, elem)
+    }
+    if(elem instanceof Arc) {
+      addArcProperties(this, elem)
     }
   }
 
@@ -820,6 +824,7 @@ export class Arc extends Shape {
     this.startID = start
     this.endID = end 
     this.type = "Arc"
+    this.edgeWeight = 1
   }
 
   draw(e) {
