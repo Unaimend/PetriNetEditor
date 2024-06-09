@@ -259,9 +259,21 @@ export class Canvas {
    this.viewportTransform.scale = newScale;
   } 
 
+  shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+  }
 
   simulateNonDeterministic () {
-    for(var i in this.shapes) {
+    const indices = this.shapes.map((_, index) => index);
+    this.shuffleArray(indices)
+    this.print(indices)
+    for(var i of indices) {
+      this.print("index")
+      this.print(i)
       var s = this.shapes[i]
       // Do the actual fireing
       if(s instanceof Rectangle) {
@@ -282,6 +294,31 @@ export class Canvas {
     }
     this.redrawShapes()
   }
+
+  
+  simulateNonDeterministic2 () {
+    for(var i in this.shapes) {
+      var s = this.shapes[i]
+      // Do the actual fireing
+      if(s instanceof Rectangle) {
+        var incomingEdges = s.getIncomingEdges()
+        var outgoingEdges = s.getOutgoingEdges()
+        
+        var tokensInc = incomingEdges.map(obj => this.lookUpByID(obj.startID).tokens) 
+        var tokensOut = outgoingEdges.map(obj => this.lookUpByID(obj.endID).tokens) 
+        var minTokenCount = Math.min(...tokensInc)
+        var maxTokenCount = Math.max(...tokensOut)
+        this.print(minTokenCount)
+        this.print(maxTokenCount)
+        if(minTokenCount >= maxTokenCount && minTokenCount > 0) {
+          incomingEdges.map(obj => this.lookUpByID(obj.startID).tokens -= obj.edgeWeight)
+          outgoingEdges.map(obj => this.lookUpByID(obj.endID).tokens += obj.edgeWeight)
+        }
+      }
+    }
+    this.redrawShapes()
+  }
+
 
   simulate() {
     this.print(this.shapes)
