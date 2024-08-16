@@ -267,13 +267,14 @@ export class Canvas {
   return array;
   }
 
+  // Executes all places in a random order
   simulateNonDeterministic () {
     const indices = this.shapes.map((_, index) => index);
     this.shuffleArray(indices)
     this.print(indices)
     for(var i of indices) {
-      this.print("index")
-      this.print(i)
+      // this.print("index")
+      // this.print(i)
       var s = this.shapes[i]
       // Do the actual fireing
       if(s instanceof Rectangle) {
@@ -281,11 +282,11 @@ export class Canvas {
         var outgoingEdges = s.getOutgoingEdges()
         var tokens = incomingEdges.map(obj => this.lookUpByID(obj.startID).tokens) 
         var minTokenCount = Math.min(...tokens)
-        this.print("Rectangle")
-        this.print(s.id)
-        this.print(tokens)
-        this.print(minTokenCount)
-        this.print("-------")
+        // this.print("Rectangle")
+        // this.print(s.id)
+        // this.print(tokens)
+        // this.print(minTokenCount)
+        // this.print("-------")
         if(minTokenCount > 0) {
           incomingEdges.map(obj => this.lookUpByID(obj.startID).tokens -= obj.edgeWeight)
           outgoingEdges.map(obj => this.lookUpByID(obj.endID).tokens += obj.edgeWeight)
@@ -308,8 +309,8 @@ export class Canvas {
         var tokensOut = outgoingEdges.map(obj => this.lookUpByID(obj.endID).tokens) 
         var minTokenCount = Math.min(...tokensInc)
         var maxTokenCount = Math.max(...tokensOut)
-        this.print(minTokenCount)
-        this.print(maxTokenCount)
+        // this.print(minTokenCount)
+        // this.print(maxTokenCount)
         if(minTokenCount >= maxTokenCount && minTokenCount > 0) {
           incomingEdges.map(obj => this.lookUpByID(obj.startID).tokens -= obj.edgeWeight)
           outgoingEdges.map(obj => this.lookUpByID(obj.endID).tokens += obj.edgeWeight)
@@ -318,7 +319,78 @@ export class Canvas {
     }
     this.redrawShapes()
   }
+  // Execute one single random transition
+  simulateNonDeterministic3 () {
+    // Do the actual fireing
+    var s = null
+    var i = 0
+    console.log("START")
+    do {
+      var i = Math.floor(Math.random() * (this.shapes.length + 1))
+      s = this.shapes[i]
+    } while(!(s instanceof Rectangle))
+    console.log(s)
+    var incomingEdges = s.getIncomingEdges()
+    var outgoingEdges = s.getOutgoingEdges()
+    
+    var tokensInc = incomingEdges.map(obj => this.lookUpByID(obj.startID).tokens) 
+    var tokensOut = outgoingEdges.map(obj => this.lookUpByID(obj.endID).tokens) 
+    var minTokenCount = Math.min(...tokensInc)
+    var maxTokenCount = Math.max(...tokensOut)
+    // this.print(minTokenCount)
+    // this.print(maxTokenCount)
+    if(minTokenCount >= maxTokenCount && minTokenCount > 0) {
+      incomingEdges.map(obj => this.lookUpByID(obj.startID).tokens -= obj.edgeWeight)
+      outgoingEdges.map(obj => this.lookUpByID(obj.endID).tokens += obj.edgeWeight)
+    } 
+  }
 
+  simulateNonDeterministic4 () {
+    // Do the actual fireing
+    var s = null
+    var i = 0
+    console.log("START")
+    do {
+      var i = Math.floor(Math.random() * (this.shapes.length + 1))
+      s = this.shapes[i]
+    } while(!(s instanceof Rectangle))
+    console.log(s)
+    var incomingEdges = s.getIncomingEdges()
+    var outgoingEdges = s.getOutgoingEdges()
+    
+    var tokensInc = incomingEdges.map(obj => this.lookUpByID(obj.startID).tokens) 
+    var minTokenCount = Math.min(...tokensInc)
+    // this.print(minTokenCount)
+    // this.print(maxTokenCount)
+    if(minTokenCount >= 1) {
+      incomingEdges.map(obj => this.lookUpByID(obj.startID).tokens -= obj.edgeWeight)
+      outgoingEdges.map(obj => this.lookUpByID(obj.endID).tokens += obj.edgeWeight)
+    } 
+  }
+
+  simulateEndles() {
+    console.log("START!")
+    var old_tokens = []
+    var new_tokens = []
+    var counter = 0
+    var cap = 0
+    while(counter < 10 && cap < 10000) {
+      // Token count before simulation
+      old_tokens = this.shapes.map(obj => obj.tokens)
+      this.simulateNonDeterministic4()
+      // Token count after simulation
+      new_tokens = this.shapes.map(obj => obj.tokens) 
+      //console.log(old_tokens)
+      //console.log(new_tokens)
+      //console.log(cap)
+      // If they are the same, nothing changed
+      // if that happens multiple times we are in a steady state
+      if(old_tokens == new_tokens) {
+        counter += 1
+      } 
+      cap += 1
+    }
+  }
 
   simulate() {
     this.print(this.shapes)

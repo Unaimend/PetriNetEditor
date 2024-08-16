@@ -43,6 +43,18 @@ document.getElementById('simulateND2-btn').addEventListener('click',
     c.simulateNonDeterministic2()
   });
 
+
+document.getElementById('simulateND3-btn').addEventListener('click', 
+  () => {
+    c.simulateNonDeterministic3()
+  });
+
+
+document.getElementById('simulateE-btn').addEventListener('click', 
+  () => {
+    c.simulateEndles()
+  });
+
 document.getElementById('debug-btn').addEventListener('click', 
   () => {
     console.log(c.shapes)

@@ -2,7 +2,6 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
-
 function createWindow() {
   const win = new BrowserWindow({
       width: 800,
@@ -55,6 +54,8 @@ function createWindow() {
       console.log(c)
       return c  // Read the selected file
     }
+    //var c = fs.readFileSync("/home/td/Documents/o2.json", { encoding: 'utf8', flag: 'r' });
+    //return c
   };
 
 
