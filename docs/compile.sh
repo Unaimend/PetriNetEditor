@@ -1,0 +1,1 @@
+typst compile ProjectPlan.typ
