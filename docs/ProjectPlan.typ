@@ -68,7 +68,7 @@ It is represented as a circle in their respective graphical drawing. Due to the 
 #definition("Transition*")[
 Let $N = (P, T, W, M_0)$ be a Petri Net. 
 We call an element $t in T$ a transition.
-It is represented as a rectangle in their respective graphical drawing. Due to the biological context of this document we will use reaction and place interchangeably.
+It is represented as a rectangle in their respective graphical drawing. Due to the biological context of this document we will use reaction and place interchangeably. 
 ]
 
 
@@ -100,12 +100,13 @@ The _post-condition_  of the transition $t$ is denoted by $t^+ = {o_1, dots, o_n
 Intuitively, $t^−$ indicates, for every place of the net, the number of tokens needed to enable transition $t$. The _firing_ of *t* removes such tokens and generates new ones, as indicated by $t^+$.
 
 #definition("Enabled transition, firing*")[
+
   Text
 ]
 
 = Simulation Approaches
 Due to the nature of the project and petri nets different approaches can be used to simulate firing.
-I have split those into two categories: _local firing approaches_ and _non-local firing_ approaches based on the fact if a transition only needs information about its own places (local) or also information about places from other transitions (non-local). For now we will only discuss local firing approaches.
+I have split those into two categories: _local firing approaches_ and _non-local firing_ approaches based on the fact if a transition only needs information about its own places (local) or also information about places from other transitions (non-local). For now we will only discuss local firing approaches. This section is mostly intended as a reference for tried-out approaches and their problems, advantages and disadvantages.
 
 == Mathematical description 
 Given a petri net N  = (P, T, W, M_0) we can describe the firing by matrix operations and a control vector $u$ that controls which transitions fire. #todo{what element i u}
@@ -114,12 +115,12 @@ Given a petri net N  = (P, T, W, M_0) we can describe the firing by matrix opera
   Let $A$ be the incidence matrix from the example given in #todo{add ref} and $u_1$ some control vector. Thus we have 
   #align(center)[
   $A =  mat(
-  2, 0, 0, 0, 0;
-  -1, 2, 0, 0, 0;
-  0, -3, 1, 1, 0;
-  0, 2, -1, 0, 0;
-  1, -1, 0, -1, 1;
-  0, 0, 0, 0, 2
+   2&,  0&,  0&,  0&, 0&;
+  -1&,  2&,  0&,  0&, 0&;
+   0&, -3&,  1&,  1&, 0&;
+   0&,  2&, -1&,  0&, 0&;
+   1&, -1&,  0&, -1&, 1&;
+   0&,  0&,  0&,  0&, 2&
 ) $, $M_0 = mat( 
   0;
   0;
@@ -133,11 +134,19 @@ Given a petri net N  = (P, T, W, M_0) we can describe the firing by matrix opera
   0;
   0;
 )$]
-Thus the first transition fires and we can reach the next state by following equation $M_1 = M_0 + A^(t)u_1$. In general we can reach the k-th state with regards to some firing sequence $(u_1, u_2, dots u_k)$ by calculating $M_k = M_0 + A^(t)u_k$.
+Thus the first transition fires and we can reach the next state band y following equation $M_1 = M_0 + A^(t)u_1$. In general we can reach the k-th state with regards to some firing sequence $(u_1, u_2, dots u_k)$ by calculating $M_k = M_0 + A^(t)u_k$.
 
 ]
 
 == Local firing approaches
+
+=== Synchronous firing
+The synchronous firing approach tries to fire all enabled transitions at the same time.
+```js
+var enabled = findAllActiveReaction()
+fire(enabled)
+```
+  This results in an ordering-problem. The results of some firings will be dependend one implementation of how the `enabled` list is being filed. #todo{word} following example.
 
 
 
