@@ -1,6 +1,12 @@
 import {addCircleProperties, addRectangleProperties, addArcProperties}  from './propertyEditor.js';
 import { STATES, StateMachine} from './stateMachine.js';
 
+
+
+function test() {
+  cosole.log("DWWDD")
+}
+
 export class Canvas {
   constructor(canvas) {
     this.idCounter = 0
@@ -18,6 +24,7 @@ export class Canvas {
     this.arc = null
     this.sm = new StateMachine()
     
+    this.zeroPlacesHidden == false
 
     this.viewportTransform = {
       x: 0,
@@ -161,6 +168,11 @@ export class Canvas {
     });
 
 
+    window.electron.hideZeroPlaces(() => {
+      this.hideZeroPlaces()
+    })
+
+
     this.canvas.addEventListener('dblclick', (e) => {
       //console.log(`dblClick called with state ${this.sm.state}`)
       var elem = this.startArc(e.offsetX - this.viewportTransform.x, e.offsetY - this.viewportTransform.y);
@@ -182,6 +194,24 @@ export class Canvas {
       }
     });
   
+  }
+
+  hideZeroPlaces() {
+    this.zeroPlacesHidden = !this.zeroPlacesHidden
+    if(this.zeroPlacesHidden) {
+      for(var s of this.shapes) {
+        if(s.tokens == 0) {
+          s.hide = true
+        }
+      }
+    } else {
+      for(var s of this.shapes) {
+        if(s.tokens == 0) {
+          s.hide = false
+        }
+      }
+    }
+    this.redrawShapes()
   }
 
   print(obj) {
@@ -514,9 +544,8 @@ export class Canvas {
       console.error('Error:', error);
     }
   }
-
-
   
+
   async load () {
     try {
       this.shapes  = []
@@ -842,6 +871,8 @@ export class Shape {
     this.arcStart = false
     this.arcEnd = false
     this.arcIDS = []
+
+    this.hidden = false
     
     // For rects and circles this is the current amount
     // For arc in is the throughput
@@ -893,21 +924,23 @@ export class Circle extends Shape{
   }
   draw(debug = true) {
     super.draw()
-    this.$ctx.beginPath();
-    this.$ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    this.$ctx.fillStyle = this.fillColor;
+    if (!this.hide) {
+      this.$ctx.beginPath();
+      this.$ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      this.$ctx.fillStyle = this.fillColor;
 
-    if(debug == true) {
-        var bb = this.getBoundingBox()       
-        //this.$ctx.fillStyle = "pink";
-        this.$ctx.strokeRect(...Object.values(bb));
-        this.$ctx.stroke();
+      if(debug == true) {
+          var bb = this.getBoundingBox()       
+          //this.$ctx.fillStyle = "pink";
+          this.$ctx.strokeRect(...Object.values(bb));
+          this.$ctx.stroke();
+      }
+      this.$ctx.fill();
+      this.$ctx.closePath();
+      this.$ctx.font = '20px Arial';
+      this.$ctx.fillStyle = 'red'; // Text c
+      this.$ctx.fillText(this.tokens, this.x, this.y);
     }
-    this.$ctx.fill();
-    this.$ctx.closePath();
-    this.$ctx.font = '20px Arial';
-    this.$ctx.fillStyle = 'red'; // Text c
-    this.$ctx.fillText(this.tokens, this.x, this.y);
 
   }
 

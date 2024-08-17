@@ -1,8 +1,14 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, MenuItem } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
+
+
+
 function createWindow() {
+
+
+
   const win = new BrowserWindow({
       width: 800,
       height: 600,
@@ -11,6 +17,25 @@ function createWindow() {
           preload: path.join(__dirname, 'preload.js'),
       }
   });
+
+  const item = { 
+    label : "Debug",
+    submenu: [
+      {
+        label: 'Hide zero place',
+        accelerator: 'Alt+Shift+I',
+        click: () => {
+          win.webContents.send('hideZeroPlaces')
+        },
+      },
+    ],
+  }
+
+  var menu = Menu.getApplicationMenu()
+  menu.append(new MenuItem(item))
+  Menu.setApplicationMenu(menu)
+
+
 
   const openSaveDialog = (data) => {
     dialog.showSaveDialog(win, {
