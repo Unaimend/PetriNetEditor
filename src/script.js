@@ -55,6 +55,17 @@ document.getElementById('simulateE-btn').addEventListener('click',
     c.simulateEndles()
   });
 
+document.getElementById('simulateN-btn').addEventListener('click', 
+  () => {
+    c.simulateN()
+  });
+
+
+document.getElementById('simulateS-btn').addEventListener('click', 
+  () => {
+    c.simulateSpecific()
+  });
+
 document.getElementById('debug-btn').addEventListener('click', 
   () => {
     console.log(c.shapes)

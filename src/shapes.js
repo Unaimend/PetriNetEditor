@@ -29,8 +29,8 @@ export class Canvas {
 
     this.previousX = 0
     this.previousY = 0
-    console.log(this.canvas.width)
-    console.log(this.canvas.height)
+    //console.log(this.canvas.width)
+    //console.log(this.canvas.height)
 
     //https://observablehq.com/plot/getting-started Add d3 stuff to the canvas
     //const context = this.ctx;
@@ -79,7 +79,7 @@ export class Canvas {
 
     this.canvas.addEventListener('mousemove', (e) => {
       this.mouseMoved = true
-      console.log(this.mouseMoved)
+      //console.log(this.mouseMoved)
       //console.log(`Mouse move called with state ${this.sm.state}`)
       if (this.sm.state == STATES.IS_DRAGGING) {
         if (this.selectedElem != null) {
@@ -101,7 +101,7 @@ export class Canvas {
 
     this.canvas.addEventListener('mousedown', (e) => {
       this.mouseMoved = false
-      console.log(`Mousedown called with state ${this.sm.state}`)
+      //console.log(`Mousedown called with state ${this.sm.state}`)
       this.previousX = e.clientX;
       this.previousY = e.clientY;
       e.preventDefault();
@@ -131,12 +131,12 @@ export class Canvas {
       } 
       this.addPropertyField(elem)
       this.redrawShapes()
-      console.log(`Mousedown left with state ${this.sm.state}`)
+      //console.log(`Mousedown left with state ${this.sm.state}`)
     });
 
     this.canvas.addEventListener('mouseup', (e) => {
       //console.log("Mouseup movestats: ", this.mouseMoved)
-      console.log(`Mouseup called with state ${this.sm.state}`)
+      //console.log(`Mouseup called with state ${this.sm.state}`)
 
       e.preventDefault();
       if (this.selectedElem != null) {
@@ -157,15 +157,15 @@ export class Canvas {
       }
       this.sm.state = STATES.NOTHING_SELECTED
       this.redrawShapes()
-      console.log(`Mouseup left with state ${this.sm.state}`)
+      //console.log(`Mouseup left with state ${this.sm.state}`)
     });
 
 
     this.canvas.addEventListener('dblclick', (e) => {
-      console.log(`dblClick called with state ${this.sm.state}`)
+      //console.log(`dblClick called with state ${this.sm.state}`)
       var elem = this.startArc(e.offsetX - this.viewportTransform.x, e.offsetY - this.viewportTransform.y);
-      console.log(`Element of arc start`)
-      console.log(elem)
+      //console.log(`Element of arc start`)
+      //console.log(elem)
       if (elem == null) {
         return this.cancelArc()
       }
@@ -349,12 +349,10 @@ export class Canvas {
     // Do the actual fireing
     var s = null
     var i = 0
-    console.log("START")
     do {
       var i = Math.floor(Math.random() * (this.shapes.length + 1))
       s = this.shapes[i]
     } while(!(s instanceof Rectangle))
-    console.log(s)
     var incomingEdges = s.getIncomingEdges()
     var outgoingEdges = s.getOutgoingEdges()
     
@@ -363,6 +361,7 @@ export class Canvas {
     // this.print(minTokenCount)
     // this.print(maxTokenCount)
     if(minTokenCount >= 1) {
+      console.log(s.id)
       incomingEdges.map(obj => this.lookUpByID(obj.startID).tokens -= obj.edgeWeight)
       outgoingEdges.map(obj => this.lookUpByID(obj.endID).tokens += obj.edgeWeight)
     } 
@@ -389,6 +388,44 @@ export class Canvas {
         counter += 1
       } 
       cap += 1
+    }
+  }
+
+  simulateN() {
+    console.log("START!")
+    var old_tokens = []
+    var new_tokens = []
+    var counter = 0
+    var cap = 0
+    while( cap < 10) {
+      // Token count before simulation
+      old_tokens = this.shapes.map(obj => obj.tokens)
+      this.simulateNonDeterministic4()
+      // Token count after simulation
+      new_tokens = this.shapes.map(obj => obj.tokens) 
+      cap += 1
+    }
+    this.redrawShapes()
+  }
+
+
+  simulateSpecific() {
+    var index = [9, 15]
+    var sh = this.shapes.filter(shape => index.includes(shape.id))
+    for (var s of sh) {
+      //var s = this.shapes[i]
+      console.log(s.id)
+      var incomingEdges = s.getIncomingEdges()
+      var outgoingEdges = s.getOutgoingEdges()
+      
+      var tokensInc = incomingEdges.map(obj => this.lookUpByID(obj.startID).tokens) 
+      var minTokenCount = Math.min(...tokensInc)
+      // this.print(minTokenCount)
+      // this.print(maxTokenCount)
+      if(minTokenCount >= 1) {
+        incomingEdges.map(obj => this.lookUpByID(obj.startID).tokens -= obj.edgeWeight)
+        outgoingEdges.map(obj => this.lookUpByID(obj.endID).tokens += obj.edgeWeight)
+      } 
     }
   }
 
@@ -507,7 +544,6 @@ export class Canvas {
             sh.canFire = shape.canFire
             sh.arcEnd  = shape.arcEnd
             sh.arcIDS = shape.arcIDS
-            sh.tokens = shape.tokens
             sh.label = shape.label
             this.shapes.push(sh)
             break
@@ -515,7 +551,6 @@ export class Canvas {
           case "Arc": {
             var sh = new Arc(this, shape.startID, shape.endID, shape.fillColor)
             sh.id = shape.id
-            sh.tokens = shape.tokens
             sh.label = shape.label
             sh.edgeWeight = shape.edgeWeight ? shape.edgeWeight : 1
             this.shapes.push(sh)
@@ -742,7 +777,7 @@ export class Canvas {
     
         let distance = Math.sqrt((x - check2[0]) ** 2 + (y - check2[1]) ** 2);
         
-        if (distance < 10 && t < 1  && t > 0) {
+        if (distance < 5 && t < 1  && t > 0) {
           this.selectedElem = shape
           this.lastSelectedElem = shape
           this.selectedElem.fillColor = "red";
@@ -810,7 +845,6 @@ export class Shape {
     
     // For rects and circles this is the current amount
     // For arc in is the throughput
-    this.tokens = 1
 
 
   }
@@ -854,6 +888,8 @@ export class Circle extends Shape{
     super(ctx, x, y, fillColor);
     this.radius = 10;
     this.type = "Circle"
+
+    this.tokens = 0
   }
   draw(debug = true) {
     super.draw()

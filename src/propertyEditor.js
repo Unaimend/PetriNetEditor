@@ -90,7 +90,6 @@ export function addRectangleProperties(canvas, elem) {
   createLabelInputPair("id", (e) => e.id, (s, v) => s.id = v)
   createLabelInputPair( "X Pos", (e) => e.x, (s, v) => s.x = v)
   createLabelInputPair( "Y Pos", (e) => e.y, (s, v) => s.y = v)
-  createLabelInputPair( "Tokens", (e) => e.tokens, (s, v) => s.tokens = parseInt(v))
   createLabelInputPair( "Label", (e) => e.label, (s, v) => s.label= v)
   createArcList()
 }

@@ -50,7 +50,7 @@ def convert(model: cobra.Model):
             "arcStart": True,
             "arcEnd": True,
             "arcIDS": arc_ids,
-            "tokens": 1,
+            "tokens": 0,
             "radius": 10 if shape_type == "Circle" else None,
             "width": 20 if shape_type == "Rectangle" else None,
             "height": 50 if shape_type == "Rectangle" else None,
@@ -64,7 +64,7 @@ def convert(model: cobra.Model):
     for i, metabolite in enumerate(model.metabolites):
         shape_id = data["counter"]
         metabolite_ids[metabolite.id] = shape_id
-        shape = create_shape(shape_id, metabolite.name, 100 * (i % 10), 100 * (i // 10), "Circle", [])
+        shape = create_shape(shape_id, metabolite.id, 100 * (i % 10), 100 * (i // 10), "Circle", [])
         data["shapes"].append(shape)
         data["counter"] += 1
 
@@ -129,7 +129,7 @@ def convert(model: cobra.Model):
 
 if __name__ == '__main__':
   print(f'INPUT <smbfile>  <outputname>')
-  sys.argv[1] = "../../sbml_examples/BIOMD0000000172_urn.xml"
+  sys.argv[1] = "../../sbml_examples/e_coli_core.xml"
   if len(sys.argv) < 3: 
     print("Please provide 2 arguments.")
 
@@ -143,4 +143,4 @@ if __name__ == '__main__':
       json.dump(custom_json, outfile, indent=2)
 
 
-  check_metabolite_connections(model, "fru26bp_c")
+  #check_metabolite_connections(model, "fru26bp_c")
