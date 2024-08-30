@@ -172,12 +172,13 @@ Thus the first transition fires and we can reach the next state band y following
 ]
 
 == Local firing approaches
-
+=== Implementatory concerns
 ==== Synchronous firing
 The synchronous firing approach tries to fire all enabled transitions at the same time.
 ```js
-var enabled = findAllActiveReaction()
-fire(enabled)
+for r in reactions:
+  if active(r):
+    fire(r)
 ```
   This results in an ordering-problem. The results of some firings will be dependend on the implementation of how the `enabled` list is being filed. Note the #todo{Is this just the inherent non-determinism of petri nets and we SHOULD accept that} following example. 
 
@@ -203,11 +204,34 @@ fire(enabled)
   edge((1,3), (2,3), "-|>"),
 )]] <sync_fire>
 
-Depending on the order in which $t_1$ and $t_2$ are saved in the program, one or the other transition will become _disabled_ after the firing of the other. Thus checking which transitions are _enabled_ before firing them is either impossible or necessitates a more complex resolution step. Thus we will focus on firing approaches that immediately fire transition if enabled.
+Depending on the order in which $t_1$ and $t_2$ are saved in the program, one or the other transition will become _disabled_ after the firing of the other. A naive solution to the ordering-problem would be to check all reactions if they are active given the current amount of tokens.
+```js
+var enabled = findAllActiveReaction()
+for r in (enabled):
+  fire(r)
+```
+This results in a different problem. Given the example above the would result in $t_1$ and $t_2$ both being marked as active. Adhering to the above  this would either fire $t_1$ or $t_2$ first and then the reaction that is left. But this would mean that one of $P_1$, $P_2$ or $P_3$ would be left with a negative amount of tokens. Thus checking which transitions are _enabled_ before firing them is either impossible or necessitates a more complex resolution step. Thus we will focus on firing approaches that immediately fire transition if enabled.
 #todo[Captions]
 
 ==== Non-deterministic firing
-Non-deterministic firing describes an approach where the order in which transitions fire is different each timestep. It is either possible to permute all enabled transitions and fire them or to just pick a random enabled transition a fire it. When permuting all transitions one could either choose a synchronous approach where a permutation of all enabled transitions fires, this results in the same proble mentioned in the previous section, or one just fires one transition at a time.
+Non-deterministic firing describes an approach where the order in which transitions fire is different each timestep. It is either possible to permute all enabled transitions and fire them,  
+
+```js
+var enabled = findAllActiveReaction(reactions)
+shuffle(enabled)
+fire(enabled)
+```
+or to just pick a random enabled transition a fire it.
+```js
+var r = pickRandom(findAllActiveReaction(reactions))
+fire(r)
+```
+When permuting all transitions one could either choose a synchronous approach where a permutation of all active transitions fires or one just fires one transition at a time.
+The advanage of this approach is that it is more realistic as certain enzymes have certain possibilites of firing. One disadvantage is that this, of course, necessitates a sample approach.
+This could result in significant runtime consts due to the size of the state space.
+
+
+=== Biological concerns
 
 ==== Concentration Based
 Due physical constraints enzymes usually do not go against the concentration gradient. Thus it would make sense to take the amount of tokens of the incoming and outgoing places of a transition into account. This could be done in synchronous or asynchronous manner. The advantage of this is the more realistic representation of biology.
