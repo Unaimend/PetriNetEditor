@@ -2,16 +2,67 @@
 <html>
 <head>
   <title>Second Window</title>
+
+  <script src="node_modules/chart.js/dist/chart.umd.js"></script>
 </head>
 <body>
   <h1>Second Window</h1>
   <p id="data"></p>
+
+  <canvas id="scatterPlot" width="400" height="300"></canvas>
   <script>
+
+
+  function getMetabolite(metaboliteName, tokenHistory) { 
+    var tokens = [];
+    for(var historyEntry of tokenHistory) {
+      var t = historyEntry.tokens;
+      var metab = t.filter((obj) => obj.label == metaboliteName)
+      
+      if(metab.length == 0) {
+        console.log("ERROR: METABOLITE NOT FOUND")
+      }
+      tokens.push(metab[0].tokens)
+    }
+    return tokens
+  }
+
     window.electron.ipcRenderer((data) => {
       console.log("FROM RENDER");
-      console.log(data);
+      console.log(typeof(data));
+      var data1 = getMetabolite("Glc(int)",data.tokenHistory);
+      var data2 = getMetabolite("ATP",data.tokenHistory);
+      const dataDict1 = data1.map((value, index) => ({ x: index, y: value }));
+      const dataDict2 = data2.map((value, index) => ({ x: index, y: value }));
+      const scatterData = {
+          datasets: [{
+            label: 'Glc',
+            data: dataDict1
+          }, {
+            label: 'ATP',
+            data: dataDict2
+          }]
+        };
+        
+        const ctx = document.getElementById('scatterPlot').getContext('2d');
+        console.log("BAR")
+        new Chart(ctx, {
+          type: 'scatter',
+          data: scatterData,
+          options: {
+            scales: {
+              x: {
+                type: 'linear',
+                position: 'bottom'
+              },
+y: {
+        type: 'linear',
+        position: 'left'
+      }
+            }
+          }
+        });
     })
-
 
   </script>
 </body>

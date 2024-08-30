@@ -3,12 +3,34 @@ const path = require('path');
 const fs = require('fs');
 
 
+function createSecondWindow(data) {
+  // Create the second window
+  secondWindow = new BrowserWindow({
+    width: 400,
+    height: 300,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload_second.js'),
+      enableRemoteModule: false,
+      nodeIntegration: true 
+    }
+  });
+
+  secondWindow.loadFile('second.html');
+
+  // Pass data to the second window
+  secondWindow.webContents.on('did-finish-load', () => {
+
+    secondWindow.webContents.openDevTools();
+    secondWindow.webContents.send('ipcRenderer', data);
+  });
+
+  secondWindow.on('closed', function () {
+    secondWindow = null;
+  });
+}
 
 
 function createWindow() {
-
-
-
   const win = new BrowserWindow({
       width: 800,
       height: 600,
@@ -97,7 +119,7 @@ function createWindow() {
   })
 
   ipcMain.handle('sendHistoryData', (event, data) => {
-    console.log(data)
+    createSecondWindow(data)
   })
 
   ipcMain.handle('load', async () => {

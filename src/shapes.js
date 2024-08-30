@@ -44,7 +44,7 @@ export class Canvas {
     //const width = canvas.width;
     //const height = canvas.height;
 
-    const nodes = d3.range(100).map(() => ({ x: Math.random() * width, y: Math.random() * height }));
+    //const nodes = d3.range(100).map(() => ({ x: Math.random() * width, y: Math.random() * height }));
 
     //const simulation = d3.forceSimulation(nodes)
     //                     .force("charge", d3.forceManyBody().strength(-5))
@@ -405,7 +405,8 @@ export class Canvas {
 
   getTokenHistory() {
     try {
-      window.electron.sendHistoryData('sendHistoryData', this.serialize(this.history.getMetabolite("Glc(int)")));
+      // TODO This deepcopy is not necessary
+      window.electron.sendHistoryData('sendHistoryData', this.deepCopy(this.history));
     } catch (error) {
       console.error('Error:', error);
     }
