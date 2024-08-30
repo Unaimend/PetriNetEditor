@@ -28,6 +28,13 @@ function createWindow() {
           win.webContents.send('hideZeroPlaces')
         },
       },
+      {
+        label: 'Show token history',
+        accelerator: 'Alt+Shift+H',
+        click: () => {
+          win.webContents.send('getTokenHistory')
+        },
+      },
     ],
   }
 
@@ -86,6 +93,12 @@ function createWindow() {
 
   ipcMain.handle('ping', () => 'pong')
   ipcMain.handle('save', (event, data) => {
+    openSaveDialog(data)
+    console.log(data)
+  })
+
+
+  ipcMain.handle('sendTokenHistory', (event, data) => {
     openSaveDialog(data)
     console.log(data)
   })
