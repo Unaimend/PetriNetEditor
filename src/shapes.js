@@ -44,7 +44,7 @@ export class Canvas {
     //const width = canvas.width;
     //const height = canvas.height;
 
-    //const nodes = d3.range(100).map(() => ({ x: Math.random() * width, y: Math.random() * height }));
+    const nodes = d3.range(100).map(() => ({ x: Math.random() * width, y: Math.random() * height }));
 
     //const simulation = d3.forceSimulation(nodes)
     //                     .force("charge", d3.forceManyBody().strength(-5))
@@ -398,14 +398,17 @@ export class Canvas {
     // this.print(minTokenCount)
     // this.print(maxTokenCount)
     if(minTokenCount >= 1) {
-      console.log(s.id)
       incomingEdges.map(obj => this.lookUpByID(obj.startID).tokens -= obj.edgeWeight)
       outgoingEdges.map(obj => this.lookUpByID(obj.endID).tokens += obj.edgeWeight)
     } 
   }
 
   getTokenHistory() {
-    console.log(this.history.getMetabolite("Glc(int)"))
+    try {
+      window.electron.sendHistoryData('sendHistoryData', this.serialize(this.history.getMetabolite("Glc(int)")));
+    } catch (error) {
+      console.error('Error:', error);
+    }
   }
 
   saveTokenCount(iteration) {

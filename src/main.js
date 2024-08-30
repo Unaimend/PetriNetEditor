@@ -94,12 +94,9 @@ function createWindow() {
   ipcMain.handle('ping', () => 'pong')
   ipcMain.handle('save', (event, data) => {
     openSaveDialog(data)
-    console.log(data)
   })
 
-
-  ipcMain.handle('sendTokenHistory', (event, data) => {
-    openSaveDialog(data)
+  ipcMain.handle('sendHistoryData', (event, data) => {
     console.log(data)
   })
 

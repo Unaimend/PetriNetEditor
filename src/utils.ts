@@ -27,7 +27,7 @@ class TokenHistory
       if(metab.length == 0) {
         console.log("ERROR: METABOLITE NOT FOUND")
       }
-      tokens.push(metab[0])
+      tokens.push(metab[0].tokens)
     }
     return tokens
   }
