@@ -21,7 +21,11 @@ function createSecondWindow(data) {
   secondWindow.webContents.on('did-finish-load', () => {
 
     secondWindow.webContents.openDevTools();
+    var start = performance.now();
     secondWindow.webContents.send('ipcRenderer', data);
+    var end = performance.now();
+    var duration = end - start;
+    console.log(`IPC Send time taken: ${duration} milliseconds`);
   });
 
   secondWindow.on('closed', function () {
@@ -105,7 +109,6 @@ function createWindow() {
     if (!path.canceled && path.filePaths.length > 0) {
       console.log('Selected file path:', path.filePaths[0]);
       var c = fs.readFileSync(path.filePaths[0], { encoding: 'utf8', flag: 'r' });
-      console.log(c)
       return c  // Read the selected file
     }
     //var c = fs.readFileSync("/home/td/Documents/o2.json", { encoding: 'utf8', flag: 'r' });

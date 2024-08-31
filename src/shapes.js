@@ -406,7 +406,17 @@ export class Canvas {
   getTokenHistory() {
     try {
       // TODO This deepcopy is not necessary
-      window.electron.sendHistoryData('sendHistoryData', this.deepCopy(this.history));
+      let start = performance.now();
+      var copy = this.history
+      let end = performance.now();
+      let duration = end - start;
+      console.log(`Time taken: ${duration} milliseconds`);
+
+      start = performance.now();
+      window.electron.sendHistoryData('sendHistoryData', copy);
+      end = performance.now();
+      duration = end - start;
+      console.log(`Send time taken: ${duration} milliseconds`);
     } catch (error) {
       console.error('Error:', error);
     }
