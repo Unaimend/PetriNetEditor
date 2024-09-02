@@ -46,7 +46,7 @@ document.getElementById('simulateND2-btn').addEventListener('click',
 
 document.getElementById('simulateND3-btn').addEventListener('click', 
   () => {
-    c.simulateNonDeterministic3()
+    c.simulateSingleRandomGradient()
   });
 
 
@@ -58,6 +58,12 @@ document.getElementById('simulateE-btn').addEventListener('click',
 document.getElementById('simulateN-btn').addEventListener('click', 
   () => {
     c.simulateN()
+  });
+
+
+document.getElementById('simulateSRG-btn').addEventListener('click', 
+  () => {
+    c.simulateShuffledGradient()
   });
 
 
