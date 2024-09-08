@@ -994,6 +994,7 @@ export class Shape {
 }
 
 export class Circle extends Shape{
+  static DEFAULT_WIDTH = 10
   constructor(ctx, x, y, fillColor = "blue") {
     super(ctx, x, y, fillColor);
     this.radius = 10;
@@ -1039,7 +1040,9 @@ export class Circle extends Shape{
 }
 
 export class Rectangle extends Shape{
-  constructor(canvas, x, y, width = 20, height = 50,fillColor = "blue") {
+  static DEFAULT_WIDTH = 20
+  static DEFAULT_HEIGHT= 50
+  constructor(canvas, x, y, width = Rectangle.DEFAULT_WIDTH, height = Rectangle.DEFAULT_HEIGHT,fillColor = "blue") {
     super(canvas, x, y, fillColor);
     this.width = width;
     this.height = height;
@@ -1097,15 +1100,64 @@ export class Arc extends Shape {
           x: (startShape.x + endShape.x) / 2,
           y: ((startShape.y + endShape.y) / 2) - 20
       };
-      this.$ctx.moveTo(startShape.x, startShape.y);
-      this.$ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, endShape.x, endShape.y);
+      if (startShape instanceof Rectangle) {
+        // ARC goes to the right of start shape
+        if (startShape.y >= endShape.y) {
+          this.$ctx.moveTo(startShape.x + Rectangle.DEFAULT_WIDTH/2, startShape.y);
+        } else {
+          this.$ctx.moveTo(startShape.x + Rectangle.DEFAULT_WIDTH/2, startShape.y + Rectangle.DEFAULT_HEIGHT);
+        }
+        this.$ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, endShape.x, endShape.y);
+      } else {
+        //Start is circle, we don't have to move
+        this.$ctx.moveTo(startShape.x, startShape.y);
+        var upperTresh = endShape.y + (Rectangle.DEFAULT_HEIGHT/2 - 0.5 * Rectangle.DEFAULT_HEIGHT/2)
+        var lowerThresh =   endShape.y + (Rectangle.DEFAULT_HEIGHT/2 + 0.5 * Rectangle.DEFAULT_HEIGHT/2)
+        if( startShape.label == "GADP") {
+          console.log(upperTresh);
+          console.log(startShape.y);
+          console.log(lowerThresh);
+          console.log(upperTresh < startShape.y  &&  startShape.y < lowerThresh );
+        }
+        if (upperTresh < startShape.y  &&  startShape.y < lowerThresh ) {
+          this.$ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, endShape.x, endShape.y + Rectangle.DEFAULT_HEIGHT/2);
+          if( startShape.label == "GADP") {
+            console.log("CASE1");
+            console.log("--------------------------");
+          }
+        } else {
+          if (startShape.y > endShape.y) {
+            this.$ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, endShape.x + Rectangle.DEFAULT_WIDTH/2, endShape.y + Rectangle.DEFAULT_HEIGHT);
+            if( startShape.label == "GADP") {
+              console.log("CASE2");
+              console.log("--------------------------");
+            }
+          } else if (startShape.y < endShape.y) {
+            this.$ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, endShape.x + Rectangle.DEFAULT_WIDTH/2, endShape.y );
+            if( startShape.label == "GADP") {
+              console.log("CASE3");
+              console.log("--------------------------");
+            }
+          }
+        }
+      }
     } else {
       const controlPoint = {
           x: (startShape.x + endShape.x) / 2,
           y: ((startShape.y + endShape.y) / 2) + 20
       }
-      this.$ctx.moveTo(endShape.x, endShape.y);
-      this.$ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, startShape.x, startShape.y);
+      if (startShape instanceof Rectangle) {
+        this.$ctx.moveTo(endShape.x , endShape.y);
+        this.$ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, startShape.x + Rectangle.DEFAULT_WIDTH/2, startShape.y + Rectangle.DEFAULT_HEIGHT);
+      } else {
+        if (startShape.y >= endShape.y) {
+          this.$ctx.moveTo(endShape.x + Rectangle.DEFAULT_WIDTH/2, endShape.y + Rectangle.DEFAULT_HEIGHT);
+        } 
+        else {
+        this.$ctx.moveTo(endShape.x + Rectangle.DEFAULT_WIDTH/2, endShape.y);
+        }
+        this.$ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, startShape.x , startShape.y);
+      }
     } 
 
 
@@ -1116,18 +1168,23 @@ export class Arc extends Shape {
     const angle = Math.atan2(endShape.y- startShape.y, endShape.x- startShape.x);
 
     // Draw the arrowhead
-    this.$ctx.save();
-    this.$ctx.translate(endShape.x, endShape.y);
-    this.$ctx.rotate(angle);
+    //this.$ctx.save();
+    ////if(endShape instanceof Rectangle) {
+    ////  this.$ctx.translate(endShape.x + 20, endShape.y + 20);
+    ////}
+    ////else {
+    ////} 
+    //this.$ctx.translate(endShape.x, endShape.y);
+    //this.$ctx.rotate(angle);
 
-    this.$ctx.beginPath();
-    this.$ctx.moveTo(0, 0);
-    this.$ctx.lineTo(-arrowSize, arrowSize / 2);
-    this.$ctx.lineTo(-arrowSize, -arrowSize / 2);
-    this.$ctx.closePath();
+    //this.$ctx.beginPath();
+    //this.$ctx.moveTo(0, 0);
+    //this.$ctx.lineTo(-arrowSize, arrowSize / 2);
+    //this.$ctx.lineTo(-arrowSize, -arrowSize / 2);
+    //this.$ctx.closePath();
 
-    this.$ctx.fill();
-    this.$ctx.restore();
+    //this.$ctx.fill();
+    //this.$ctx.restore();
   }
 }
 
