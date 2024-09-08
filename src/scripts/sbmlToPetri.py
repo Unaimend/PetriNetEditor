@@ -2,7 +2,8 @@ import sys
 from pathlib import Path
 import cobra
 import json
-
+def find_by_property(data, key, value):
+    return next((item for item in data if item.get(key) == value), None)
 
 def check_metabolite_connections(model, metabolite_id):
     metabolite = model.metabolites.get_by_id(metabolite_id)
@@ -58,6 +59,21 @@ def convert(model: cobra.Model):
             "canFire": False if shape_type == "Rectangle" else None
         }
         return shape
+    def create_arc(arc_id, start_id, end_id):
+        arc = {
+                "id": arc_id,
+                "label": "",
+                "fillColor": "blue",
+                "isSelected": False,
+                "arcStart": False,
+                "arcEnd": False,
+                "startID": start_id,
+                "endID": end_id, 
+                "type": "Arc",
+                "edgeWeight": 1
+            }
+        return arc
+
 
     # Create shapes for metabolites
     metabolite_ids = {}
@@ -81,43 +97,35 @@ def convert(model: cobra.Model):
         # TODO I think we can merge this code into one loop
         for reactant in reaction.reactants:
             arc_id = data["counter"]
-            arc = {
-                "id": arc_id,
-                "label": "",
-                "fillColor": "blue",
-                "isSelected": False,
-                "arcStart": False,
-                "arcEnd": False,
-                "startID": metabolite_ids[reactant.id],
-                "endID": reaction_id,
-                "type": "Arc",
-                "edgeWeight": 1
-            }
-            # TODO CHECK THIS
+            # Create an arc for each reactant_place to the reaction
+            arc = None
+            if reaction.id.startswith("EX_") and reaction.upper_bound == 0 and reaction.lower_bound < 0:
+              # This reactions takes up stuff (aka generates out of nothing)
+              print(reaction)
+              print("REACTION IS UPTAKE")
+              arc = create_arc(arc_id,  reaction_id, metabolite_ids[reactant.id],)
+              met = find_by_property(data["shapes"], "id", metabolite_ids[reactant.id])
+              met["tokens"] = 1000
+            elif reaction.id.startswith("EX_") and reaction.upper_bound > 0 and reaction.lower_bound == 0:
+              print(reaction)
+              print("REACTION IS PRODUCTION")
+              arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id)
+            elif reaction.id.startswith("EX_"):
+              arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id)
+            else:
+              print(reaction)
+              print("REACTION IS BOTH")
+              arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id)
             data["shapes"].append(arc)
-            # New id for next arc
             data["counter"] += 1
-            # Add to circle
             data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
-            # Add to Add to rectangle
             data["shapes"][reaction_id]["arcIDS"].append(arc_id)
 
         # Create arcs for products
         for product in reaction.products:
             arc_id = data["counter"]
-            arc = {
-                "id": arc_id,
-                "label": "",
-                "fillColor": "blue",
-                "isSelected": False,
-                "arcStart": False,
-                "arcEnd": False,
-                "startID": reaction_id,
-                "endID": metabolite_ids[product.id],
-                "type": "Arc",
-                "edgeWeight": 1
-            }
-            # TODO CHECK THIS
+            # Create an arc for reaction to each product place
+            arc =  create_arc(arc_id, reaction_id, metabolite_ids[product.id])
             data["shapes"].append(arc)
             data["counter"] += 1
             data["shapes"][reaction_id]["arcIDS"].append(arc_id)
@@ -129,7 +137,7 @@ def convert(model: cobra.Model):
 
 if __name__ == '__main__':
   print(f'INPUT <smbfile>  <outputname>')
-  sys.argv[1] = "../../sbml_examples/e_coli_core.xml"
+  #sys.argv[1] = "../../sbml_examples/e_coli_core.xml"
   if len(sys.argv) < 3: 
     print("Please provide 2 arguments.")
 

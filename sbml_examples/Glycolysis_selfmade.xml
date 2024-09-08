@@ -141,7 +141,7 @@
           <speciesReference species="M_glc__D_c" stoichiometry="1" constant="true"/>
         </listOfReactants>
       </reaction>
-      <reaction id="R_EX_PYR" name="PYR_EXchange" reversible="true" fast="false" fbc:lowerFluxBound="cobra_default_lb" fbc:upperFluxBound="cobra_default_ub">
+      <reaction id="R_EX_PYR" name="PYR_EXchange" reversible="false" fast="false" fbc:lowerFluxBound="cobra_0_bound" fbc:upperFluxBound="cobra_default_ub">
         <listOfReactants>
           <speciesReference species="M_pyr_c" stoichiometry="1" constant="true"/>
         </listOfReactants>

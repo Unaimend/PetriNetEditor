@@ -43,7 +43,7 @@ reaction12.add_metabolites({
 # CAN ONLY BE EXPORTED
 reaction13 = Reaction('EX_PYR')
 reaction13.name = 'PYR_EXchange'
-reaction13.lower_bound = -1000 
+reaction13.lower_bound = 0
 reaction13.upper_bound = 1000
 reaction13.add_metabolites({
     pyruvate: -1.0,
