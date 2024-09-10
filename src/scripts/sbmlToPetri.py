@@ -100,26 +100,54 @@ def convert(model: cobra.Model):
             # Create an arc for each reactant_place to the reaction
             arc = None
             if reaction.id.startswith("EX_") and reaction.upper_bound == 0 and reaction.lower_bound < 0:
-              # This reactions takes up stuff (aka generates out of nothing)
-              print(reaction)
-              print("REACTION IS UPTAKE")
+              # This reactions takes up stuff (aka generates out of nothing) (source)
               arc = create_arc(arc_id,  reaction_id, metabolite_ids[reactant.id],)
               met = find_by_property(data["shapes"], "id", metabolite_ids[reactant.id])
               met["tokens"] = 1000
+
+              data["shapes"].append(arc)
+              data["counter"] += 1
+              data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
+              data["shapes"][reaction_id]["arcIDS"].append(arc_id)
             elif reaction.id.startswith("EX_") and reaction.upper_bound > 0 and reaction.lower_bound == 0:
-              print(reaction)
-              print("REACTION IS PRODUCTION")
+              # This reactions pumps stuff (aka pumps into nothing) (sink)
               arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id)
+
+              data["shapes"].append(arc)
+              data["counter"] += 1
+              data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
+              data["shapes"][reaction_id]["arcIDS"].append(arc_id)
             elif reaction.id.startswith("EX_"):
+              # ELSE we have a reversible ex reaction                           
               arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id)
+              data["shapes"].append(arc)
+              data["counter"] += 1
+              data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
+              data["shapes"][reaction_id]["arcIDS"].append(arc_id)
+
+
+              shape_id = data["counter"]
+              reaction_id = shape_id
+              shape = create_shape(shape_id, "REV_" + reaction.name, 100 * (shape_id % 10), 100 * (shape_id // 10) + 50, "Rectangle", [])
+              data["shapes"].append(shape)
+              data["counter"] += 1
+              
+              arc_id = data["counter"]
+              arcR = create_arc(arc_id,  reaction_id, metabolite_ids[reactant.id])
+              data["shapes"].append(arcR)
+              data["counter"] += 1
+              data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
+              data["shapes"][reaction_id]["arcIDS"].append(arc_id)
+
             else:
               print(reaction)
               print("REACTION IS BOTH")
               arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id)
-            data["shapes"].append(arc)
-            data["counter"] += 1
-            data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
-            data["shapes"][reaction_id]["arcIDS"].append(arc_id)
+
+              data["shapes"].append(arc)
+              data["counter"] += 1
+              data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
+              data["shapes"][reaction_id]["arcIDS"].append(arc_id)
 
         # Create arcs for products
         for product in reaction.products:

@@ -483,7 +483,7 @@ export class Canvas {
       // Token count before simulation
       old_tokens = this.shapes.map(obj => obj.tokens)
       this.saveTokenCount(lastIterationStop + cap, old_tokens)
-      this.simulateSingleRandom()
+      this.simulateShuffledGradient()
       // Token count after simulation
       new_tokens = this.shapes.map(obj => obj.tokens) 
       //console.log(old_tokens)
@@ -1168,23 +1168,23 @@ export class Arc extends Shape {
     const angle = Math.atan2(endShape.y- startShape.y, endShape.x- startShape.x);
 
     // Draw the arrowhead
-    //this.$ctx.save();
-    ////if(endShape instanceof Rectangle) {
-    ////  this.$ctx.translate(endShape.x + 20, endShape.y + 20);
-    ////}
-    ////else {
-    ////} 
-    //this.$ctx.translate(endShape.x, endShape.y);
-    //this.$ctx.rotate(angle);
+    this.$ctx.save();
+    //if(endShape instanceof Rectangle) {
+    //  this.$ctx.translate(endShape.x + 20, endShape.y + 20);
+    //}
+    //else {
+    //} 
+    this.$ctx.translate(endShape.x, endShape.y);
+    this.$ctx.rotate(angle);
 
-    //this.$ctx.beginPath();
-    //this.$ctx.moveTo(0, 0);
-    //this.$ctx.lineTo(-arrowSize, arrowSize / 2);
-    //this.$ctx.lineTo(-arrowSize, -arrowSize / 2);
-    //this.$ctx.closePath();
+    this.$ctx.beginPath();
+    this.$ctx.moveTo(0, 0);
+    this.$ctx.lineTo(-arrowSize, arrowSize / 2);
+    this.$ctx.lineTo(-arrowSize, -arrowSize / 2);
+    this.$ctx.closePath();
 
-    //this.$ctx.fill();
-    //this.$ctx.restore();
+    this.$ctx.fill();
+    this.$ctx.restore();
   }
 }
 

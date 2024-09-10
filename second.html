@@ -30,8 +30,8 @@
     }
 
     window.electron.ipcRenderer((data) => {
-      var data1 = getMetabolite("Glc(int)",data.tokenHistory);
-      var data2 = getMetabolite("ATP",data.tokenHistory);
+      var data1 = getMetabolite("atp_c",data.tokenHistory);
+      var data2 = getMetabolite("pyr_c",data.tokenHistory);
       const dataDict1 = data1.map((value, index) => ({ x: index, y: value }));
       const dataDict2 = data2.map((value, index) => ({ x: index, y: value }));
       scatterData = {
