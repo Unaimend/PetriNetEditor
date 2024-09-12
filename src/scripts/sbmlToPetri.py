@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 import cobra
 import json
+from typing import Dict
 def find_by_property(data, key, value):
     return next((item for item in data if item.get(key) == value), None)
 
@@ -40,7 +41,7 @@ def convert(model: cobra.Model):
     }
 
     # Helper function to create a shape
-    def create_shape(shape_id, label, x, y, shape_type, arc_ids, tokens = 0):
+    def create_shape(shape_id, label, x, y, shape_type, arc_ids, tokens = 10):
         shape = {
             "id": shape_id,
             "x": x,
@@ -86,12 +87,21 @@ def convert(model: cobra.Model):
 
     # Create shapes for reactions and arcs
     for reaction in model.reactions:
-        # Create shape for the reaction
+        # Create reverse reaction
+        if not reaction.id.startswith("EX_") and (reaction.reversibility == True or (reaction.lower_bound < 0 and reaction.upper_bound > 0)): 
+          shape_id = data["counter"]
+          reaction_id = shape_id
+          shape = create_shape(shape_id, "REV_" + reaction.name, 100 * (shape_id % 10), 100 * (shape_id // 10) + 50, "Rectangle", [])
+          data["shapes"].append(shape)
+          data["counter"] += 1
+        
         shape_id = data["counter"]
         reaction_id = shape_id
         shape = create_shape(shape_id, reaction.name, 100 * (shape_id % 10), 100 * (shape_id // 10) + 50, "Rectangle", [])
         data["shapes"].append(shape)
         data["counter"] += 1
+
+
 
         # Create arcs for reactants
         # TODO I think we can merge this code into one loop
@@ -103,16 +113,18 @@ def convert(model: cobra.Model):
               # This reactions takes up stuff (aka generates out of nothing) (source)
               arc = create_arc(arc_id,  reaction_id, metabolite_ids[reactant.id],)
               met = find_by_property(data["shapes"], "id", metabolite_ids[reactant.id])
-              met["tokens"] = 1000
-
+              met["tokens"] = -1 * reaction.lower_bound
+              print("REACTION IS UPTAKE")
               data["shapes"].append(arc)
               data["counter"] += 1
               data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
               data["shapes"][reaction_id]["arcIDS"].append(arc_id)
             elif reaction.id.startswith("EX_") and reaction.upper_bound > 0 and reaction.lower_bound == 0:
               # This reactions pumps stuff (aka pumps into nothing) (sink)
+              print(f'REACTION {reaction.id} IS SINK')
               arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id)
-
+              met = find_by_property(data["shapes"], "id", metabolite_ids[reactant.id])
+              met["tokens"] = 0
               data["shapes"].append(arc)
               data["counter"] += 1
               data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
@@ -120,6 +132,9 @@ def convert(model: cobra.Model):
             elif reaction.id.startswith("EX_"):
               # ELSE we have a reversible ex reaction                           
               arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id)
+              print(f"REVERSIBLE  {reaction.id} EX REACTION")
+              met = find_by_property(data["shapes"], "id", metabolite_ids[reactant.id])
+              met["tokens"] = -1 * reaction.lower_bound
               data["shapes"].append(arc)
               data["counter"] += 1
               data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
@@ -140,10 +155,7 @@ def convert(model: cobra.Model):
               data["shapes"][reaction_id]["arcIDS"].append(arc_id)
 
             else:
-              print(reaction)
-              print("REACTION IS BOTH")
               arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id)
-
               data["shapes"].append(arc)
               data["counter"] += 1
               data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
