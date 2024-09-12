@@ -40,7 +40,7 @@ def convert(model: cobra.Model):
     }
 
     # Helper function to create a shape
-    def create_shape(shape_id, label, x, y, shape_type, arc_ids):
+    def create_shape(shape_id, label, x, y, shape_type, arc_ids, tokens = 0):
         shape = {
             "id": shape_id,
             "x": x,
@@ -51,7 +51,7 @@ def convert(model: cobra.Model):
             "arcStart": True,
             "arcEnd": True,
             "arcIDS": arc_ids,
-            "tokens": 0,
+            "tokens": tokens,
             "radius": 10 if shape_type == "Circle" else None,
             "width": 20 if shape_type == "Rectangle" else None,
             "height": 50 if shape_type == "Rectangle" else None,
@@ -80,7 +80,7 @@ def convert(model: cobra.Model):
     for i, metabolite in enumerate(model.metabolites):
         shape_id = data["counter"]
         metabolite_ids[metabolite.id] = shape_id
-        shape = create_shape(shape_id, metabolite.id, 100 * (i % 10), 100 * (i // 10), "Circle", [])
+        shape = create_shape(shape_id, metabolite.id, 100 * (i % 10), 100 * (i // 10), "Circle", [], 10)
         data["shapes"].append(shape)
         data["counter"] += 1
 
