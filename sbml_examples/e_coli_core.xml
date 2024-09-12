@@ -22,7 +22,7 @@
       <parameter value="1000" id="cobra_default_ub" sboTerm="SBO:0000626" constant="true" units="mmol_per_gDW_per_hr"/>
       <parameter value="0" id="cobra_0_bound" sboTerm="SBO:0000626" constant="true" units="mmol_per_gDW_per_hr"/>
       <parameter id="R_ATPM_lower_bound" value="8.39" sboTerm="SBO:0000625" constant="true" units="mmol_per_gDW_per_hr"/>
-      <parameter id="R_EX_glc__D_e_lower_bound" value="-10" sboTerm="SBO:0000625" constant="true" units="mmol_per_gDW_per_hr"/>
+      <parameter id="R_EX_glc__D_e_lower_bound" value="-100" sboTerm="SBO:0000625" constant="true" units="mmol_per_gDW_per_hr"/>
     </listOfParameters>
     <listOfCompartments>
       <compartment id="e" name="extracellular space" constant="true"/>
