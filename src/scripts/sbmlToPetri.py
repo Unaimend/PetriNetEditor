@@ -3,7 +3,45 @@ from pathlib import Path
 import cobra
 import json
 import math
-from typing import Dict
+from functools import reduce
+
+def remove_biomass_func(model: cobra.Model) -> cobra.Model:
+  # Check if the reaction exists and remove it
+  print(model.objective)
+  #model.reactions.get_by_id(reaction_id).remove_from_model()
+  a = [x for x in model.reactions if x.objective_coefficient == 1]
+  model.remove_reactions(a)
+  print(f"Reaction '{a}' removed.")
+  print("------------------------------------")
+  return model 
+
+def get_non_integer_reactions(model: cobra.Model) -> list[cobra.Reaction]:
+  l: list[cobra.Reaction] = []
+  for reaction in model.reactions:
+    for (metabolite, stoich) in reaction.metabolites.items():
+      if int(stoich) != stoich:
+        l.append(reaction)
+  return l
+
+
+def convert_stoichiometry(model: cobra.Model, gcd = False) -> cobra.Model:
+  for reaction in get_non_integer_reactions(model):
+      print(reaction)
+      coefficients = reaction.metabolites.values()
+      # TODO: Think more about negative coefficients
+      smallest_coeff = min(list(map(abs, coefficients)))
+      print(smallest_coeff)
+      exponent = round(math.log10(1/smallest_coeff)) + 1
+      factor = 10**exponent
+      new_reaction = reaction * factor
+      if gcd:
+        gcd = reduce(math.gcd,list(map(lambda x: abs(int(x)), new_reaction.metabolites.values())))
+        new_reaction = new_reaction * (1/gcd)
+      model.remove_reactions([reaction])
+      model.add_reactions([new_reaction])
+      print(reaction)
+  return model
+
 def find_by_property(data, key, value):
     return next((item for item in data if item.get(key) == value), None)
 
@@ -72,7 +110,7 @@ def convert(model: cobra.Model):
                 "startID": start_id,
                 "endID": end_id, 
                 "type": "Arc",
-                "edgeWeight": abs(weight)
+                "edgeWeight": abs(int(weight))
             }
         return arc
 
@@ -166,6 +204,7 @@ def convert(model: cobra.Model):
               data["counter"] += 1
               data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
               data["shapes"][reaction_id]["arcIDS"].append(arc_id)
+              print(reaction_id)
 
         # Create arcs for products
         for product in reaction.products:
@@ -184,6 +223,10 @@ def convert(model: cobra.Model):
 
 
 
+
+
+
+
 if __name__ == '__main__':
   print(f'INPUT <smbfile>  <outputname>')
   #sys.argv[1] = "../../sbml_examples/e_coli_core.xml"
@@ -195,7 +238,16 @@ if __name__ == '__main__':
 
 
   model = load_model(input_file)
+  # The biomass function has non-integer stoichiometry
+  # Thus we remove it for now
+  model = remove_biomass_func(model)
+  # There are also other reactions with non-integer stoichiometry
+  model = convert_stoichiometry(model, gcd = True)
+  assert(get_non_integer_reactions(model) == [])
   custom_json = convert(model)
+
+
+
   with open(output_file, "w") as outfile:
       json.dump(custom_json, outfile, indent=2)
 
