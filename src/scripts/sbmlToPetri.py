@@ -23,31 +23,59 @@ def get_non_integer_reactions(model: cobra.Model) -> list[cobra.Reaction]:
         l.append(reaction)
   return l
 
+#if gcd:
+#  gcd = reduce(math.gcd,list(map(lambda x: abs(int(x)), new_reaction.metabolites.values())))
+#  new_reaction = new_reaction * (1/gcd)
+#model.add_reactions([new_reaction])
+
+def scale_reactions(model, global_min_coef):
+    new_model = cobra.Model()
+
+    # Copy the metabolites, compartments, and other necessary components to the new model
+    new_model.compartments = model.compartments.copy()
+
+    exponent = round(math.log10(1 / global_min_coef)) + 1
+    factor = 10 ** exponent
+
+    new_reactions = []  
+
+    for reaction in model.reactions:
+        new_reaction = reaction.copy()  
+        new_reaction.id = reaction.id  
+
+        scaled_metabolites = {metab: round(coeff * factor) for metab, coeff in reaction.metabolites.items()}
+        new_reaction.add_metabolites(scaled_metabolites, combine=False)
+
+        new_reaction.bounds = (new_reaction.lower_bound * factor, new_reaction.upper_bound * factor)
+        new_reactions.append(new_reaction)  
+        print(new_reaction)
+
+    new_model.add_reactions(new_reactions)
+    return new_model
+
 
 def convert_stoichiometry(model: cobra.Model, gcd = False) -> cobra.Model:
+  global_min_coef = sys.maxsize
   for reaction in get_non_integer_reactions(model):
-      print(reaction)
       coefficients = reaction.metabolites.values()
       # TODO: Think more about negative coefficients
-      smallest_coeff = min(list(map(abs, coefficients)))
-      print(smallest_coeff)
-      exponent = round(math.log10(1/smallest_coeff)) + 1
-      factor = 10**exponent
-      new_reaction = reaction * factor
-      if gcd:
-        gcd = reduce(math.gcd,list(map(lambda x: abs(int(x)), new_reaction.metabolites.values())))
-        new_reaction = new_reaction * (1/gcd)
-      model.remove_reactions([reaction])
-      model.add_reactions([new_reaction])
-      print(reaction)
+      smallest_coeff_per_reaction = min(list(map(abs, coefficients)))
+      global_min_coef = min(global_min_coef, smallest_coeff_per_reaction)
+  
+
+  model = scale_reactions(model, global_min_coef)
   return model
 
-def find_by_property(data, key, value):
+from typing import TypeVar, Optional
+K = TypeVar('K')  
+V = TypeVar('V') 
+
+def find_by_property(data: dict[K, V], key: K, value: V) -> Optional[tuple[K, V]]:
     return next((item for item in data if item.get(key) == value), None)
 
 def check_metabolite_connections(model, metabolite_id):
     metabolite = model.metabolites.get_by_id(metabolite_id)
-    print(f"Metabolite: {metabolite.name}")
+    #print(f"Metabolite: {metabolite.name}")
     for reaction in metabolite.reactions:
         print(f" - Reaction: {reaction.id} ({reaction.name})")
         if metabolite in reaction.reactants:
@@ -61,10 +89,10 @@ def load_model(file: Path):
   model = cobra.io.read_sbml_model(file)
   
   # Display basic information about the model
-  print(f"Model ID: {model.id}")
-  print(f"Number of Reactions: {len(model.reactions)}")
-  print(f"Number of Metabolites: {len(model.metabolites)}")
-  print(f"Number of Genes: {len(model.genes)}")
+#  print(f"Model ID: {model.id}")
+#  print(f"Number of Reactions: {len(model.reactions)}")
+#  print(f"Number of Metabolites: {len(model.metabolites)}")
+#  print(f"Number of Genes: {len(model.genes)}")
   
   # Optional: Display a summary of the model
   model.summary()
@@ -237,17 +265,16 @@ if __name__ == '__main__':
   output_file: Path = Path(sys.argv[2])
 
 
-  model = load_model(input_file)
+  model: cobra.Model = load_model(input_file)
   # The biomass function has non-integer stoichiometry
   # Thus we remove it for now
-  model = remove_biomass_func(model)
+  #model = remove_biomass_func(model)
   # There are also other reactions with non-integer stoichiometry
-  model = convert_stoichiometry(model, gcd = True)
+  model = convert_stoichiometry(model, gcd = False)
   assert(get_non_integer_reactions(model) == [])
   custom_json = convert(model)
 
-
-
+  cobra.io.write_sbml_model(model, "transformed.xml")
   with open(output_file, "w") as outfile:
       json.dump(custom_json, outfile, indent=2)
 
