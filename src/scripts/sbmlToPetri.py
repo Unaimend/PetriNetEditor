@@ -46,9 +46,10 @@ def scale_reactions(model, global_min_coef):
         scaled_metabolites = {metab: round(coeff * factor) for metab, coeff in reaction.metabolites.items()}
         new_reaction.add_metabolites(scaled_metabolites, combine=False)
 
-        new_reaction.bounds = (new_reaction.lower_bound * factor, new_reaction.upper_bound * factor)
+        new_reaction.bounds = (int(new_reaction.lower_bound * factor), int(new_reaction.upper_bound * factor))
         new_reactions.append(new_reaction)  
         print(new_reaction)
+        print(new_reaction.bounds)
 
     new_model.add_reactions(new_reactions)
     return new_model
