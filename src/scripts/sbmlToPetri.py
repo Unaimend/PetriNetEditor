@@ -276,7 +276,7 @@ if __name__ == '__main__':
   model = convert_stoichiometry(model, gcd = False)
   assert(get_non_integer_reactions(model) == [])
   custom_json = convert(model)
-
+  custom_json["factor"] = glob_factor
   cobra.io.write_sbml_model(model, "transformed.xml")
   with open(output_file, "w") as outfile:
       json.dump(custom_json, outfile, indent=2)
