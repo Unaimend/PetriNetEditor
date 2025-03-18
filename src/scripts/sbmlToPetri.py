@@ -27,8 +27,9 @@ def get_non_integer_reactions(model: cobra.Model) -> list[cobra.Reaction]:
 #  gcd = reduce(math.gcd,list(map(lambda x: abs(int(x)), new_reaction.metabolites.values())))
 #  new_reaction = new_reaction * (1/gcd)
 #model.add_reactions([new_reaction])
-
+glob_factor = 1
 def scale_reactions(model, global_min_coef):
+    global glob_factor
     new_model = cobra.Model()
 
     # Copy the metabolites, compartments, and other necessary components to the new model
@@ -36,7 +37,7 @@ def scale_reactions(model, global_min_coef):
 
     exponent = round(math.log10(1 / global_min_coef)) + 1
     factor = 10 ** exponent
-
+    glob_factor = factor
     new_reactions = []  
 
     for reaction in model.reactions:
@@ -110,6 +111,7 @@ def convert(model: cobra.Model):
 
     # Helper function to create a shape
     def create_shape(shape_id, label, x, y, shape_type, arc_ids, tokens = 10):
+        print("DWDWD", glob_factor)
         shape = {
             "id": shape_id,
             "x": x,
@@ -120,7 +122,7 @@ def convert(model: cobra.Model):
             "arcStart": True,
             "arcEnd": True,
             "arcIDS": arc_ids,
-            "tokens": tokens,
+            "tokens": tokens * glob_factor,
             "radius": 10 if shape_type == "Circle" else None,
             "width": 20 if shape_type == "Rectangle" else None,
             "height": 50 if shape_type == "Rectangle" else None,
