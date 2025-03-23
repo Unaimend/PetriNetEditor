@@ -166,6 +166,82 @@ def convert(model: cobra.Model):
           shape = create_shape(shape_id, "REV_" + reaction.name, 100 * (shape_id % 10), 100 * (shape_id // 10) + 50, "Rectangle", [])
           data["shapes"].append(shape)
           data["counter"] += 1
+
+
+          # Create arcs for reactants
+          # TODO I think we can merge this code into one loop
+          for reactant in reaction.reactants:
+              arc_id = data["counter"]
+              # Create an arc for each reactant_place to the reaction
+              arc = None
+              print("FROM", reaction.id , "TO", reactant.id)
+              weight = MAT.loc[reactant.id, reaction.id]
+              print(weight)
+              if reaction.id.startswith("EX_") and reaction.upper_bound == 0 and reaction.lower_bound < 0:
+                # This reactions takes up stuff (aka generates out of nothing) (source)
+                arc = create_arc(arc_id,  reaction_id, metabolite_ids[reactant.id], weight)
+                met = find_by_property(data["shapes"], "id", metabolite_ids[reactant.id])
+                met["tokens"] = -1 * reaction.lower_bound
+                #print("REACTION IS UPTAKE")
+                data["shapes"].append(arc)
+                data["counter"] += 1
+                data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
+                data["shapes"][reaction_id]["arcIDS"].append(arc_id)
+              elif reaction.id.startswith("EX_") and reaction.upper_bound > 0 and reaction.lower_bound == 0:
+                # This reactions pumps stuff (aka pumps into nothing) (sink)
+                #print(f'REACTION {reaction.id} IS SINK')
+                arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id, weight)
+                met = find_by_property(data["shapes"], "id", metabolite_ids[reactant.id])
+                met["tokens"] = 0
+                data["shapes"].append(arc)
+                data["counter"] += 1
+                data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
+                data["shapes"][reaction_id]["arcIDS"].append(arc_id)
+              elif reaction.id.startswith("EX_"):
+                # ELSE we have a reversible ex reaction                           
+                arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id, weight)
+                #print(f"REVERSIBLE  {reaction.id} EX REACTION")
+                met = find_by_property(data["shapes"], "id", metabolite_ids[reactant.id])
+                met["tokens"] = -1 * reaction.lower_bound
+                data["shapes"].append(arc)
+                data["counter"] += 1
+                data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
+                data["shapes"][reaction_id]["arcIDS"].append(arc_id)
+
+
+                shape_id = data["counter"]
+                reaction_id = shape_id
+                shape = create_shape(shape_id, "REV_" + reaction.name, 100 * (shape_id % 10), 100 * (shape_id // 10) + 50, "Rectangle", [])
+                data["shapes"].append(shape)
+                data["counter"] += 1
+                
+                arc_id = data["counter"]
+                arcR = create_arc(arc_id,  reaction_id, metabolite_ids[reactant.id], weight)
+                data["shapes"].append(arcR)
+                data["counter"] += 1
+                data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
+                data["shapes"][reaction_id]["arcIDS"].append(arc_id)
+
+              else:
+                arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id, weight)
+                data["shapes"].append(arc)
+                data["counter"] += 1
+                data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
+                data["shapes"][reaction_id]["arcIDS"].append(arc_id)
+                print(reaction_id)
+
+          # Create arcs for products
+          for product in reaction.products:
+              arc_id = data["counter"]
+              # Create an arc for reaction to each product place
+              print("FROM", reaction.id , "TO", product.id)
+              weight = MAT.loc[product.id, reaction.id]
+              print(weight)
+              arc =  create_arc(arc_id, reaction_id, metabolite_ids[product.id], weight)
+              data["shapes"].append(arc)
+              data["counter"] += 1
+              data["shapes"][reaction_id]["arcIDS"].append(arc_id)
+              data["shapes"][metabolite_ids[product.id]]["arcIDS"].append(arc_id)
         
         shape_id = data["counter"]
         reaction_id = shape_id
