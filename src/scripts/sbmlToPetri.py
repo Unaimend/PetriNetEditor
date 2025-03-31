@@ -21,6 +21,18 @@ def remove_biomass_func(model: cobra.Model) -> cobra.Model:
   print("------------------------------------")
   return model 
 
+
+def scale_biomass_func(model: cobra.Model, scaling_factor = 100) -> cobra.Model:
+  # Check if the reaction exists and remove it
+  print(model.objective)
+  #model.reactions.get_by_id(reaction_id).remove_from_model()
+  a = [x for x in model.reactions if x.objective_coefficient == 1][0]
+  b = a * (1 / scaling_factor)
+  model.remove_reactions([a])
+  model.add_reactions([b])
+  return model 
+
+
 def get_non_integer_reactions(model: cobra.Model) -> list[cobra.Reaction]:
   l: list[cobra.Reaction] = []
   for reaction in model.reactions:
@@ -183,58 +195,12 @@ def convert(model: cobra.Model):
               print("FROM", reaction.id , "TO", reactant.id)
               weight = MAT.loc[reactant.id, reaction.id]
               print(weight)
-              if reaction.id.startswith("EX_") and reaction.upper_bound == 0 and reaction.lower_bound < 0:
-                # This reactions takes up stuff (aka generates out of nothing) (source)
-                arc = create_arc(arc_id,  reaction_id, metabolite_ids[reactant.id], weight)
-                met = find_by_property(data["shapes"], "id", metabolite_ids[reactant.id])
-                met["tokens"] = -1 * reaction.lower_bound
-                #print("REACTION IS UPTAKE")
-                data["shapes"].append(arc)
-                data["counter"] += 1
-                data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
-                data["shapes"][reaction_id]["arcIDS"].append(arc_id)
-              elif reaction.id.startswith("EX_") and reaction.upper_bound > 0 and reaction.lower_bound == 0:
-                # This reactions pumps stuff (aka pumps into nothing) (sink)
-                #print(f'REACTION {reaction.id} IS SINK')
-                arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id, weight)
-                met = find_by_property(data["shapes"], "id", metabolite_ids[reactant.id])
-                met["tokens"] = 0
-                data["shapes"].append(arc)
-                data["counter"] += 1
-                data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
-                data["shapes"][reaction_id]["arcIDS"].append(arc_id)
-              elif reaction.id.startswith("EX_"):
-                # ELSE we have a reversible ex reaction                           
-                arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id, weight)
-                #print(f"REVERSIBLE  {reaction.id} EX REACTION")
-                met = find_by_property(data["shapes"], "id", metabolite_ids[reactant.id])
-                met["tokens"] = -1 * reaction.lower_bound
-                data["shapes"].append(arc)
-                data["counter"] += 1
-                data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
-                data["shapes"][reaction_id]["arcIDS"].append(arc_id)
-
-
-                shape_id = data["counter"]
-                reaction_id = shape_id
-                shape = create_shape(shape_id, "REV_" + reaction.name, 100 * (shape_id % 10), 100 * (shape_id // 10) + 50, "Rectangle", [])
-                data["shapes"].append(shape)
-                data["counter"] += 1
-                
-                arc_id = data["counter"]
-                arcR = create_arc(arc_id,  reaction_id, metabolite_ids[reactant.id], weight)
-                data["shapes"].append(arcR)
-                data["counter"] += 1
-                data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
-                data["shapes"][reaction_id]["arcIDS"].append(arc_id)
-
-              else:
-                arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id, weight)
-                data["shapes"].append(arc)
-                data["counter"] += 1
-                data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
-                data["shapes"][reaction_id]["arcIDS"].append(arc_id)
-                print(reaction_id)
+              arc = create_arc(arc_id, reaction_id, metabolite_ids[reactant.id], weight)
+              data["shapes"].append(arc)
+              data["counter"] += 1
+              data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
+              data["shapes"][reaction_id]["arcIDS"].append(arc_id)
+              print(reaction_id)
 
           # Create arcs for products
           for product in reaction.products:
@@ -243,7 +209,7 @@ def convert(model: cobra.Model):
               print("FROM", reaction.id , "TO", product.id)
               weight = MAT.loc[product.id, reaction.id]
               print(weight)
-              arc =  create_arc(arc_id, reaction_id, metabolite_ids[product.id], weight)
+              arc =  create_arc(arc_id,  metabolite_ids[product.id], reaction_id, weight)
               data["shapes"].append(arc)
               data["counter"] += 1
               data["shapes"][reaction_id]["arcIDS"].append(arc_id)
@@ -352,6 +318,7 @@ if __name__ == '__main__':
   model: cobra.Model = load_model(input_file)
   # The biomass function has non-integer stoichiometry
   # Thus we remove it for now
+  model = scale_biomass_func(model, 100)
   #model = remove_biomass_func(model)
   # There are also other reactions with non-integer stoichiometry
   model = convert_stoichiometry(model, gcd = False)
