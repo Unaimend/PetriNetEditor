@@ -5,6 +5,12 @@ import json
 import math
 from functools import reduce
 
+def remove_water(model: cobra.Model) -> cobra.Model:
+  h2O_ident = ['h2o_c', 'h2o_e']
+  h20metabs = list(map(model.metabolites.get_by_id, h2O_ident))
+  model.remove_metabolites(h20metabs)
+  return(model)
+
 def remove_biomass_func(model: cobra.Model) -> cobra.Model:
   # Check if the reaction exists and remove it
   print(model.objective)
@@ -333,7 +339,6 @@ def convert(model: cobra.Model):
 
 
 
-
 if __name__ == '__main__':
   print(f'INPUT <smbfile>  <outputname>')
   #sys.argv[1] = "../../sbml_examples/e_coli_core.xml"
@@ -351,6 +356,7 @@ if __name__ == '__main__':
   # There are also other reactions with non-integer stoichiometry
   model = convert_stoichiometry(model, gcd = False)
   assert(get_non_integer_reactions(model) == [])
+  model = remove_water(model)
   custom_json = convert(model)
   custom_json["factor"] = glob_factor
   cobra.io.write_sbml_model(model, "transformed.xml")
