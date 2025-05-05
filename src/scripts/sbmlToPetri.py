@@ -301,8 +301,28 @@ def convert(model: cobra.Model):
     return data
 
 
+# Examoke get_json_id_of_metab(g6p_c, ..)
+def get_arcs_of_metab(json, metabolite_name: str) -> Optional[list[int]]:
+  for elem in json["shapes"]:
+    if elem["label"] == metabolite_name:
+      return elem["arcIDS"]
+  return None
 
+def set_metabs_constant(json, ids: list[str]):
+  arc_ids: list[Optional[list[int]]] = []
 
+  for id in ids:
+    arc_ids.append(get_arcs_of_metab(json, id))
+  
+  arc_ids = list(filter(None, arc_ids))
+
+  # Flatten
+  arc_ids = list(set(reduce(lambda x, y: x + y, arc_ids)))
+  
+  for elem in json["shapes"]:
+    if elem["id"] in arc_ids:
+      elem["edgeWeight"] = 0
+  return json
 
 
 if __name__ == '__main__':
@@ -313,7 +333,7 @@ if __name__ == '__main__':
 
   input_file: Path = Path(sys.argv[1])
   output_file: Path = Path(sys.argv[2])
-
+  ids = ["g6p_c", "o2_e"]
 
   model: cobra.Model = load_model(input_file)
   # The biomass function has non-integer stoichiometry
@@ -323,8 +343,9 @@ if __name__ == '__main__':
   # There are also other reactions with non-integer stoichiometry
   model = convert_stoichiometry(model, gcd = False)
   assert(get_non_integer_reactions(model) == [])
-  model = remove_water(model)
+  #model = remove_water(model)
   custom_json = convert(model)
+  custom_json = set_metabs_constant(custom_json, ids)
   custom_json["factor"] = glob_factor
   cobra.io.write_sbml_model(model, "transformed.xml")
   with open(output_file, "w") as outfile:
