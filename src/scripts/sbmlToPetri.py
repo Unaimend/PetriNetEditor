@@ -309,6 +309,8 @@ def get_arcs_of_metab(json, metabolite_name: str) -> Optional[list[int]]:
   return None
 
 def set_metabs_constant(json, ids: list[str]):
+  if len(ids) == 0:
+    return json
   arc_ids: list[Optional[list[int]]] = []
 
   for id in ids:
@@ -333,7 +335,8 @@ if __name__ == '__main__':
 
   input_file: Path = Path(sys.argv[1])
   output_file: Path = Path(sys.argv[2])
-  ids = ["g6p_c", "o2_e"]
+  # ids = ["g6p_c", "o2_e"]
+  ids = []
 
   model: cobra.Model = load_model(input_file)
   # The biomass function has non-integer stoichiometry
