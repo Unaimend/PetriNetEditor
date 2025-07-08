@@ -4,10 +4,18 @@ import cobra
 import json
 import math
 from functools import reduce
+import warnings
 
-def remove_water(model: cobra.Model) -> cobra.Model:
-  h2O_ident = ['h2o_c', 'h2o_e']
-  h20metabs = list(map(model.metabolites.get_by_id, h2O_ident))
+def remove_water(model: cobra.Model, h2O_ident:list[str] = ["h2o_e","h2o_c","h2o_p"]) -> cobra.Model:
+  # check if list of water metabolites exists as metabolite id
+  mod_met_ids = [x.id for model.metabolites]
+  h2O_ids = []
+  for met in h2O_ident:
+    if met in mod_met_ids:
+      h2O_ids.append(met)
+    else:
+      warnings.warn(met + " not found as metabolite id in the model, check metabolite ids! Will ignore and proceed")
+  h20metabs = list(map(model.metabolites.get_by_id, h2O_ids))
   model.remove_metabolites(h20metabs)
   return(model)
 
