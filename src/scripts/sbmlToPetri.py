@@ -8,7 +8,7 @@ import warnings
 
 def remove_water(model: cobra.Model, h2O_ident:list[str] = ["h2o_e","h2o_c","h2o_p"]) -> cobra.Model:
   # check if list of water metabolites exists as metabolite id
-  mod_met_ids = [x.id for model.metabolites]
+  mod_met_ids = [x.id for x in model.metabolites]
   h2O_ids = []
   for met in h2O_ident:
     if met in mod_met_ids:
@@ -21,7 +21,7 @@ def remove_water(model: cobra.Model, h2O_ident:list[str] = ["h2o_e","h2o_c","h2o
 
 def remove_biomass_func(model: cobra.Model) -> cobra.Model:
   # Check if the reaction exists and remove it
-  print(model.objective)
+  #print(model.objective)
   #model.reactions.get_by_id(reaction_id).remove_from_model()
   a = [x for x in model.reactions if x.objective_coefficient == 1]
   model.remove_reactions(a)
@@ -32,7 +32,7 @@ def remove_biomass_func(model: cobra.Model) -> cobra.Model:
 
 def scale_biomass_func(model: cobra.Model, scaling_factor = 100) -> cobra.Model:
   # Check if the reaction exists and remove it
-  print(model.objective)
+  #print(model.objective)
   #model.reactions.get_by_id(reaction_id).remove_from_model()
   a = [x for x in model.reactions if x.objective_coefficient == 1][0]
   b = a * (1 / scaling_factor)
@@ -75,8 +75,8 @@ def scale_reactions(model, global_min_coef):
 
         new_reaction.bounds = (int(new_reaction.lower_bound * factor), int(new_reaction.upper_bound * factor))
         new_reactions.append(new_reaction)  
-        print(new_reaction)
-        print(new_reaction.bounds)
+        #print(new_reaction)
+        #print(new_reaction.bounds)
 
     new_model.add_reactions(new_reactions)
     return new_model
@@ -123,7 +123,7 @@ def load_model(file: Path):
 #  print(f"Number of Genes: {len(model.genes)}")
   
   # Optional: Display a summary of the model
-  model.summary()
+#  model.summary()
   return model
 
 # Writte by ChatGTP
@@ -137,7 +137,7 @@ def convert(model: cobra.Model):
 
     # Helper function to create a shape
     def create_shape(shape_id, label, x, y, shape_type, arc_ids, tokens = 10):
-        print("DWDWD", glob_factor)
+        #print("DWDWD", glob_factor)
         shape = {
             "id": shape_id,
             "x": x,
@@ -156,10 +156,10 @@ def convert(model: cobra.Model):
             "canFire": False if shape_type == "Rectangle" else None
         }
         return shape
-    def create_arc(arc_id, start_id, end_id, weight = 1):
+    def create_arc(arc_id, start_id, end_id, weight = 1, label=""):
         arc = {
                 "id": arc_id,
-                "label": "",
+                "label": label,
                 "fillColor": "blue",
                 "isSelected": False,
                 "arcStart": False,
@@ -181,15 +181,15 @@ def convert(model: cobra.Model):
         data["shapes"].append(shape)
         data["counter"] += 1
     MAT = cobra.util.create_stoichiometric_matrix(model, array_type = "DataFrame")
-    print(MAT)
-    print(MAT.index)
+    #print(MAT)
+    #print(MAT.index)
     # Create shapes for reactions and arcs
     for reaction in model.reactions:
         # Create reverse reaction
         if not reaction.id.startswith("EX_") and (reaction.reversibility == True or (reaction.lower_bound < 0 and reaction.upper_bound > 0)): 
           shape_id = data["counter"]
           reaction_id = shape_id
-          shape = create_shape(shape_id, "REV_" + reaction.name, 100 * (shape_id % 10), 100 * (shape_id // 10) + 50, "Rectangle", [])
+          shape = create_shape(shape_id, "REV_" + reaction.id, 100 * (shape_id % 10), 100 * (shape_id // 10) + 50, "Rectangle", [])
           data["shapes"].append(shape)
           data["counter"] += 1
 
@@ -200,24 +200,28 @@ def convert(model: cobra.Model):
               arc_id = data["counter"]
               # Create an arc for each reactant_place to the reaction
               arc = None
-              print("FROM", reaction.id , "TO", reactant.id)
+              #print("FROM", reaction.id , "TO", reactant.id)
               weight = MAT.loc[reactant.id, reaction.id]
-              print(weight)
-              arc = create_arc(arc_id, reaction_id, metabolite_ids[reactant.id], weight)
+              #print(weight)
+              arc = create_arc(arc_id, reaction_id, metabolite_ids[reactant.id], weight,
+                               label =reaction.id + "(" + str(reaction_id) + ")|" +
+                               reactant.id+ "(" + str(metabolite_ids[reactant.id]) +")")
               data["shapes"].append(arc)
               data["counter"] += 1
               data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
               data["shapes"][reaction_id]["arcIDS"].append(arc_id)
-              print(reaction_id)
+              #print(reaction_id)
 
           # Create arcs for products
           for product in reaction.products:
               arc_id = data["counter"]
               # Create an arc for reaction to each product place
-              print("FROM", reaction.id , "TO", product.id)
+              #print("FROM", reaction.id , "TO", product.id)
               weight = MAT.loc[product.id, reaction.id]
-              print(weight)
-              arc =  create_arc(arc_id,  metabolite_ids[product.id], reaction_id, weight)
+              #print(weight)
+              arc =  create_arc(arc_id,  metabolite_ids[product.id], reaction_id, weight, 
+                               label =reaction.id + "(" + str(reaction_id) + ")|" +
+                               product.id+ "(" + str(metabolite_ids[product.id]) +")")
               data["shapes"].append(arc)
               data["counter"] += 1
               data["shapes"][reaction_id]["arcIDS"].append(arc_id)
@@ -225,7 +229,7 @@ def convert(model: cobra.Model):
         
         shape_id = data["counter"]
         reaction_id = shape_id
-        shape = create_shape(shape_id, reaction.name, 100 * (shape_id % 10), 100 * (shape_id // 10) + 50, "Rectangle", [])
+        shape = create_shape(shape_id, reaction.id, 100 * (shape_id % 10), 100 * (shape_id // 10) + 50, "Rectangle", [])
         data["shapes"].append(shape)
         data["counter"] += 1
 
@@ -237,12 +241,14 @@ def convert(model: cobra.Model):
             arc_id = data["counter"]
             # Create an arc for each reactant_place to the reaction
             arc = None
-            print("FROM", reaction.id , "TO", reactant.id)
+            #print("FROM", reaction.id , "TO", reactant.id)
             weight = MAT.loc[reactant.id, reaction.id]
-            print(weight)
+            #print(weight)
             if reaction.id.startswith("EX_") and reaction.upper_bound == 0 and reaction.lower_bound < 0:
               # This reactions takes up stuff (aka generates out of nothing) (source)
-              arc = create_arc(arc_id,  reaction_id, metabolite_ids[reactant.id], weight)
+              arc = create_arc(arc_id,  reaction_id, metabolite_ids[reactant.id], weight,
+                               label =reaction.id + "(" + str(reaction_id)+ ")|" +
+                               reactant.id+ "(" + str(metabolite_ids[reactant.id])+")")
               met = find_by_property(data["shapes"], "id", metabolite_ids[reactant.id])
               met["tokens"] = -1 * reaction.lower_bound
               #print("REACTION IS UPTAKE")
@@ -253,7 +259,9 @@ def convert(model: cobra.Model):
             elif reaction.id.startswith("EX_") and reaction.upper_bound > 0 and reaction.lower_bound == 0:
               # This reactions pumps stuff (aka pumps into nothing) (sink)
               #print(f'REACTION {reaction.id} IS SINK')
-              arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id, weight)
+              arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id, weight,
+                               label =reaction.id + "(" + str(reaction_id) + ")|" +
+                               reactant.id+ "(" + str(metabolite_ids[reactant.id])+")")
               met = find_by_property(data["shapes"], "id", metabolite_ids[reactant.id])
               met["tokens"] = 0
               data["shapes"].append(arc)
@@ -262,7 +270,9 @@ def convert(model: cobra.Model):
               data["shapes"][reaction_id]["arcIDS"].append(arc_id)
             elif reaction.id.startswith("EX_"):
               # ELSE we have a reversible ex reaction                           
-              arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id, weight)
+              arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id, weight,
+                               label =reaction.id + "(" + str(reaction_id) + ")|" +
+                               reactant.id+ "(" + str(metabolite_ids[reactant.id]) +")")
               #print(f"REVERSIBLE  {reaction.id} EX REACTION")
               met = find_by_property(data["shapes"], "id", metabolite_ids[reactant.id])
               met["tokens"] = -1 * reaction.lower_bound
@@ -274,33 +284,39 @@ def convert(model: cobra.Model):
 
               shape_id = data["counter"]
               reaction_id = shape_id
-              shape = create_shape(shape_id, "REV_" + reaction.name, 100 * (shape_id % 10), 100 * (shape_id // 10) + 50, "Rectangle", [])
+              shape = create_shape(shape_id, "REV_" + reaction.id, 100 * (shape_id % 10), 100 * (shape_id // 10) + 50, "Rectangle", [])
               data["shapes"].append(shape)
               data["counter"] += 1
               
               arc_id = data["counter"]
-              arcR = create_arc(arc_id,  reaction_id, metabolite_ids[reactant.id], weight)
+              arcR = create_arc(arc_id,  reaction_id, metabolite_ids[reactant.id], weight,
+                                label =reaction.id + "(" + str(reaction_id) + ")|" +
+                                reactant.id+ "(" + str(metabolite_ids[reactant.id]) +")")
               data["shapes"].append(arcR)
               data["counter"] += 1
               data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
               data["shapes"][reaction_id]["arcIDS"].append(arc_id)
 
             else:
-              arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id, weight)
+              arc = create_arc(arc_id, metabolite_ids[reactant.id], reaction_id, weight,
+                               label =reaction.id + "(" + str(reaction_id) + ")|" +
+                               reactant.id+ "(" + str(metabolite_ids[reactant.id]) +")")
               data["shapes"].append(arc)
               data["counter"] += 1
               data["shapes"][metabolite_ids[reactant.id]]["arcIDS"].append(arc_id)
               data["shapes"][reaction_id]["arcIDS"].append(arc_id)
-              print(reaction_id)
+              #print(reaction_id)
 
         # Create arcs for products
         for product in reaction.products:
             arc_id = data["counter"]
             # Create an arc for reaction to each product place
-            print("FROM", reaction.id , "TO", product.id)
+            #print("FROM", reaction.id , "TO", product.id)
             weight = MAT.loc[product.id, reaction.id]
-            print(weight)
-            arc =  create_arc(arc_id, reaction_id, metabolite_ids[product.id], weight)
+            #print(weight)
+            arc =  create_arc(arc_id, reaction_id, metabolite_ids[product.id], weight,
+                              label =reaction.id + "(" + str(reaction_id) + ")|" +
+                                     product.id+ "(" + str(metabolite_ids[product.id]) +")")
             data["shapes"].append(arc)
             data["counter"] += 1
             data["shapes"][reaction_id]["arcIDS"].append(arc_id)
@@ -354,7 +370,7 @@ if __name__ == '__main__':
   # There are also other reactions with non-integer stoichiometry
   model = convert_stoichiometry(model, gcd = False)
   assert(get_non_integer_reactions(model) == [])
-  #model = remove_water(model)
+  model = remove_water(model)
   custom_json = convert(model)
   custom_json = set_metabs_constant(custom_json, ids)
   custom_json["factor"] = glob_factor
