@@ -128,7 +128,7 @@ def load_model(file: Path):
 
 # Writte by ChatGTP
 # Adaptep by me
-def convert(model: cobra.Model):
+def convert(model: cobra.Model, atp_id:str = "atp"):
     # Initialize the data structure
     data = {
         "counter": 0,
@@ -136,7 +136,7 @@ def convert(model: cobra.Model):
     }
 
     # Helper function to create a shape
-    def create_shape(shape_id, label, x, y, shape_type, arc_ids, tokens = 10):
+    def create_shape(shape_id, label, x, y, shape_type, arc_ids, tokens = 10, isABC = False):
         #print("DWDWD", glob_factor)
         shape = {
             "id": shape_id,
@@ -153,8 +153,10 @@ def convert(model: cobra.Model):
             "width": 20 if shape_type == "Rectangle" else None,
             "height": 50 if shape_type == "Rectangle" else None,
             "type": shape_type,
-            "canFire": False if shape_type == "Rectangle" else None
+            "canFire": False if shape_type == "Rectangle" else None,
+            "isABC": isABC
         }
+        print(shape)
         return shape
     def create_arc(arc_id, start_id, end_id, weight = 1, label=""):
         arc = {
@@ -171,6 +173,13 @@ def convert(model: cobra.Model):
             }
         return arc
 
+    # helper function if reaction is an ABC transporter
+    def isABCrxn(rxn, atp_id = "atp"):
+        return(len(rxn.compartments) > 1 and any([x.id.startswith(atp_id) for x in rxn.metabolites]))
+        
+
+    
+
 
     # Create shapes for metabolites
     metabolite_ids = {}
@@ -181,15 +190,14 @@ def convert(model: cobra.Model):
         data["shapes"].append(shape)
         data["counter"] += 1
     MAT = cobra.util.create_stoichiometric_matrix(model, array_type = "DataFrame")
-    #print(MAT)
-    #print(MAT.index)
+
     # Create shapes for reactions and arcs
     for reaction in model.reactions:
         # Create reverse reaction
         if not reaction.id.startswith("EX_") and (reaction.reversibility == True or (reaction.lower_bound < 0 and reaction.upper_bound > 0)): 
           shape_id = data["counter"]
           reaction_id = shape_id
-          shape = create_shape(shape_id, "REV_" + reaction.id, 100 * (shape_id % 10), 100 * (shape_id // 10) + 50, "Rectangle", [])
+          shape = create_shape(shape_id, "REV_" + reaction.id, 100 * (shape_id % 10), 100 * (shape_id // 10) + 50, "Rectangle", [], isABC= isABCrxn(reaction, atp_id = atp_id))
           data["shapes"].append(shape)
           data["counter"] += 1
 
@@ -229,7 +237,7 @@ def convert(model: cobra.Model):
         
         shape_id = data["counter"]
         reaction_id = shape_id
-        shape = create_shape(shape_id, reaction.id, 100 * (shape_id % 10), 100 * (shape_id // 10) + 50, "Rectangle", [])
+        shape = create_shape(shape_id, reaction.id, 100 * (shape_id % 10), 100 * (shape_id // 10) + 50, "Rectangle", [], isABC= isABCrxn(reaction, atp_id = atp_id))
         data["shapes"].append(shape)
         data["counter"] += 1
 
@@ -284,7 +292,7 @@ def convert(model: cobra.Model):
 
               shape_id = data["counter"]
               reaction_id = shape_id
-              shape = create_shape(shape_id, "REV_" + reaction.id, 100 * (shape_id % 10), 100 * (shape_id // 10) + 50, "Rectangle", [])
+              shape = create_shape(shape_id, "REV_" + reaction.id, 100 * (shape_id % 10), 100 * (shape_id // 10) + 50, "Rectangle", [], isABC= isABCrxn(reaction, atp_id = atp_id))
               data["shapes"].append(shape)
               data["counter"] += 1
               
@@ -360,7 +368,30 @@ if __name__ == '__main__':
   input_file: Path = Path(sys.argv[1])
   output_file: Path = Path(sys.argv[2])
   # ids = ["g6p_c", "o2_e"]
-  ids = []
+  ids = [
+          #"pi_e",
+          "nh4_e",
+          "h_e",
+          "co2_e",
+          #"glc__D_e",
+          "h2o_e",
+          "o2_e",
+          "k_e",
+          "fe2_e",
+          "fe3_e",
+          "na1_e",
+          "so4_e",
+          "zn2_e",
+          "tungs_e",
+          "mobd_e",
+          "mg2_e",
+          "mn2_e",
+          "cu2_e",
+          "cobalt2_e",
+          "cl_e",
+          "ca2_e",
+          "cbl1_e"
+]
 
   model: cobra.Model = load_model(input_file)
   # The biomass function has non-integer stoichiometry
@@ -380,3 +411,4 @@ if __name__ == '__main__':
 
 
   #check_metabolite_connections(model, "fru26bp_c")
+
