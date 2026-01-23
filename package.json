@@ -12,7 +12,7 @@
     "chart.js": "^4.4.4",
     "d3": "^7.9.0",
     "electron": "^29.1.6",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.23"
   },
   "devDependencies": {
     "typescript": "^5.4.5"
